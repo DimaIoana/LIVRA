@@ -1,0 +1,22 @@
+# Environment / config
+.env
+.env.local
+config/local.php
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Uploads / generated content
+uploads/
+cache/
