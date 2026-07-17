@@ -1,0 +1,58 @@
+/* Meniul principal (index.php). Restul stilurilor vin din app.css. */
+
+.sectiuni {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.sectiune {
+  display: block;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.sectiune:hover {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+}
+
+.sectiune__total {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--brand);
+  line-height: 1.1;
+}
+
+.sectiune__unitate {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sectiune__titlu {
+  margin: 14px 0 4px;
+  font-size: 16px;
+}
+
+.sectiune__descriere {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.subsol {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.subsol a {
+  color: var(--text-muted);
+}

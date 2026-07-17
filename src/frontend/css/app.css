@@ -1,0 +1,471 @@
+:root {
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --border: #e2e7f0;
+  --text: #1c2333;
+  --text-muted: #6b7590;
+  --brand: #2f5cff;
+  --ok: #12855a;
+  --ok-bg: #e6f6ef;
+  --fail: #c0304a;
+  --fail-bg: #fdecef;
+  --warn: #8a5a00;
+  --warn-bg: #fdf2df;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.header__inner {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--brand);
+  text-decoration: none;
+}
+
+.logo:hover {
+  opacity: 0.8;
+}
+
+.header__subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.toolbar__search {
+  flex: 1;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.input:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+}
+
+.btn {
+  background: var(--brand);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.btn--link {
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+}
+
+.btn--danger {
+  color: var(--fail);
+}
+
+.alert {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.alert--ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.alert--fail {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  text-align: left;
+  padding: 10px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.table th[data-sort] {
+  cursor: pointer;
+}
+
+.table th[data-sort]:hover {
+  color: var(--text);
+}
+
+/* Sageata: gri si discreta pe coloanele inactive, colorata pe cea activa. */
+.table th[data-sort]::after {
+  content: "↕";
+  margin-left: 6px;
+  opacity: 0.35;
+}
+
+.table th[data-sort]:hover::after {
+  opacity: 0.6;
+}
+
+.table th.th--sorted {
+  color: var(--brand);
+}
+
+.table th.th--sorted[data-dir="asc"]::after {
+  content: "↑";
+  opacity: 1;
+}
+
+.table th.th--sorted[data-dir="desc"]::after {
+  content: "↓";
+  opacity: 1;
+}
+
+/* Celulele se rup pe randuri in loc sa forteze bara orizontala. Emailurile
+   lungi n-au spatii, deci au nevoie de rupere explicita. */
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--bg);
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Statusuri de expediere. */
+.tag--ok {
+  background: var(--ok-bg);
+  border-color: transparent;
+  color: var(--ok);
+}
+
+.tag--warn {
+  background: var(--warn-bg);
+  border-color: transparent;
+  color: var(--warn);
+}
+
+.tag--fail {
+  background: var(--fail-bg);
+  border-color: transparent;
+  color: var(--fail);
+}
+
+/* Stoc sub pragul de recomanda. */
+.cell--alert {
+  color: var(--fail);
+  font-weight: 600;
+}
+
+/* Valorile scurte si atomice arata prost rupte pe doua randuri. */
+.cell--nowrap {
+  white-space: nowrap;
+}
+
+.cell--number {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Fara asta, regulile de mai jos cu `display` invinge atributul `hidden`
+   din HTML si elementul ramane vizibil desi JS-ul il ascunde. */
+[hidden] {
+  display: none !important;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 24, 40, 0.45);
+}
+
+.modal__box {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.modal__title {
+  margin: 0 0 18px;
+  font-size: 18px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field__label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.field__hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form__error {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--fail-bg);
+  color: var(--fail);
+  font-size: 13px;
+}
+
+.form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* --- Navigatie intre pagini --- */
+
+.nav {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.nav__link {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.nav__link:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.nav__link--active {
+  background: var(--bg);
+  color: var(--brand);
+}
+
+/* --- Pagina de test --- */
+
+.card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.card__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.card__desc {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.summary {
+  margin-top: 20px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.summary--idle {
+  background: var(--bg);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.summary--ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.summary--fail {
+  background: var(--fail-bg);
+  color: var(--fail);
+}
+
+.checks {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.check {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.check__icon {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.check__icon--ok {
+  background: var(--ok);
+}
+
+.check__icon--fail {
+  background: var(--fail);
+}
+
+.check__name {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.check__detail {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: Consolas, monospace;
+  word-break: break-word;
+}

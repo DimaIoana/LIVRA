@@ -1,0 +1,37 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRIMUL - Pagina de test</title>
+<link rel="stylesheet" href="css/app.css">
+
+<header class="header">
+  <div class="header__inner">
+    <a class="logo" href="../../index.php">PRIMUL</a>
+    <span class="header__subtitle">Pagina de test &amp; diagnostic</span>
+    <nav class="nav">
+      <a class="nav__link" href="clienti.html">Clienti</a>
+      <a class="nav__link" href="expedieri.html">Expedieri</a>
+      <a class="nav__link" href="soferi.html">Soferi</a>
+      <a class="nav__link" href="produse.html">Produse</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <section class="card">
+    <div class="card__head">
+      <div>
+        <h1 class="card__title">Stare sistem</h1>
+        <p class="card__desc">Verifica lantul frontend &rarr; api &rarr; backend &rarr; baza de date.</p>
+      </div>
+      <button id="run-checks" class="btn" type="button">Ruleaza verificarile</button>
+    </div>
+
+    <div id="summary" class="summary summary--idle">
+      Apasa pe buton pentru a rula verificarile.
+    </div>
+
+    <ul id="checks" class="checks"></ul>
+  </section>
+</main>
+
+<script src="js/test.js"></script>
