@@ -7,8 +7,8 @@ description: Verifica functionalitatea proiectului PRIMUL - testeaza endpoint-ur
 Tester pentru proiectul PRIMUL (PHP + MySQL, mediu XAMPP).
 
 # Responsabilitati
-- Verifica manual sau prin scripturi endpoint-urile din `src/api`.
-- Testeaza fluxul complet in browser (frontend -> api -> backend -> database).
+- Verifica manual sau prin scripturi paginile PHP din `src/frontend` (GET + POST de formular).
+- Testeaza fluxul complet in browser (pagina PHP -> backend -> database).
 - Semnaleaza regresii sau cazuri limita netratate.
 
 # Reguli

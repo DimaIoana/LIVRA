@@ -10,16 +10,16 @@ Aplicatia trebuie sa fie usor de folosit, dar sa aiba interfata frumoasa
 
 
 ## Structura proiectului
-- `src/api/` - endpoint-uri PHP consumate de frontend (JSON)
-- `src/frontend/` - HTML, CSS, JS, componente de interfata
-- `src/backend/` - logica de business, clase PHP, servicii
+- `src/frontend/` - pagini PHP randate pe server (HTML/CSS), fara API/AJAX/JS
+- `src/backend/` - logica de business, repository-uri PHP, servicii
 - `src/database/` - scheme SQL, migrari, seed-uri
 - `tools/` - scripturi, template-uri si utilitare auxiliare
 - `docs/` - documentatie de proiect
 - `.claude/memory/` - context persistent despre proiect, standarde si conventii
 
 ## Reguli generale de lucru
-- Codul PHP nou se scrie in stil consistent cu ce exista deja in `src/backend` si `src/api`.
+- Codul PHP nou se scrie in stil consistent cu ce exista deja in `src/backend` si `src/frontend`.
+- Aplicatia e PHP randat pe server: fara strat de API/AJAX/JSON/JS pentru date. Paginile fac query direct in DB prin repository-uri. Nu se introduce API fara acordul explicit, in scris, al userului.
 - Nu se introduc dependinte noi (Composer, framework-uri) fara acordul explicit al userului.
 - Orice modificare de schema in baza de date se face prin fisiere in `src/database/`, nu direct in phpMyAdmin, ca sa ramana istoric.
 - Vezi `.claude/memory/coding-standards.md` si `.claude/memory/conventions.md` pentru detalii.

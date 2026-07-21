@@ -9,29 +9,44 @@ $sectiuni = [
     [
         'titlu' => 'Clienti',
         'descriere' => 'Persoane fizice si juridice care trimit colete.',
-        'link' => 'src/frontend/clienti.html',
+        'link' => 'src/frontend/clienti.php',
         'total' => $pdo->query('SELECT COUNT(*) FROM clienti')->fetchColumn(),
         'unitate' => 'clienti',
     ],
     [
         'titlu' => 'Expedieri',
         'descriere' => 'Coletele, cu sofer, ruta si status de livrare.',
-        'link' => 'src/frontend/expedieri.html',
+        'link' => 'src/frontend/expedieri.php',
         'total' => $pdo->query('SELECT COUNT(*) FROM expedieri')->fetchColumn(),
         'unitate' => 'expedieri',
         'extra' => $pdo->query("SELECT COUNT(*) FROM expedieri WHERE Status_expediere = 'In tranzit'")->fetchColumn() . ' in tranzit',
     ],
     [
+        'titlu' => 'Comenzi',
+        'descriere' => 'Comenzile plasate de clienti din magazin.',
+        'link' => 'src/frontend/comenzi.php',
+        'total' => $pdo->query('SELECT COUNT(*) FROM comenzi')->fetchColumn(),
+        'unitate' => 'comenzi',
+        'extra' => $pdo->query("SELECT COUNT(*) FROM comenzi WHERE Status = 'Noua'")->fetchColumn() . ' noi',
+    ],
+    [
         'titlu' => 'Soferi',
         'descriere' => 'Curierii si orasul lor de baza.',
-        'link' => 'src/frontend/soferi.html',
+        'link' => 'src/frontend/soferi.php',
         'total' => $pdo->query('SELECT COUNT(*) FROM soferi')->fetchColumn(),
         'unitate' => 'soferi',
     ],
     [
+        'titlu' => 'Rute',
+        'descriere' => 'Traseele intre orase si distantele lor.',
+        'link' => 'src/frontend/rute.php',
+        'total' => $pdo->query('SELECT COUNT(*) FROM rute')->fetchColumn(),
+        'unitate' => 'rute',
+    ],
+    [
         'titlu' => 'Produse',
         'descriere' => 'Stocul lunar pe produs.',
-        'link' => 'src/frontend/produse.html',
+        'link' => 'src/frontend/produse.php',
         'total' => $pdo->query('SELECT COUNT(DISTINCT Product_ID) FROM inventory')->fetchColumn(),
         'unitate' => 'produse',
         // Doar cea mai recenta luna a fiecarui produs: altfel un produs care a
@@ -50,8 +65,8 @@ $sectiuni = [
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PRIMUL</title>
-    <link rel="stylesheet" href="src/frontend/css/app.css">
-    <link rel="stylesheet" href="src/frontend/css/index.css">
+    <link rel="stylesheet" href="src/frontend/css/app.css?v=<?= filemtime(__DIR__ . '/src/frontend/css/app.css') ?>">
+    <link rel="stylesheet" href="src/frontend/css/index.css?v=<?= filemtime(__DIR__ . '/src/frontend/css/index.css') ?>">
 </head>
 <body>
     <header class="header">
@@ -75,9 +90,14 @@ $sectiuni = [
             <?php endforeach; ?>
         </div>
 
+        <div class="cta">
+            <a class="btn cta__btn" href="src/frontend/magazin.php">Deschide magazinul online &rarr;</a>
+            <span class="cta__text">Catalog pe categorii, cos de cumparaturi si plasare de comenzi pentru clienti.</span>
+        </div>
+
         <p class="subsol">
             MySQL <?= htmlspecialchars($versiune_mysql) ?> &middot;
-            <a href="src/frontend/test.html">Pagina de test</a>
+            <a href="src/frontend/test.php">Pagina de test</a>
         </p>
     </main>
 </body>

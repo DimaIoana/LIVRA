@@ -1,8 +1,13 @@
 # src/frontend/
 
-HTML, CSS si JS pentru interfata utilizator.
+Pagini PHP randate integral pe server: HTML + CSS, fara API/AJAX/JS.
 
 ## Reguli
-- Fara logica de business - doar prezentare si apeluri catre `src/api`.
-- JS vanilla, organizat pe fisiere per functionalitate/pagina.
-- Fara build step (webpack/vite) pana nu exista o nevoie clara.
+- Fara strat de API/fetch/JSON. Fiecare pagina face query direct in DB prin
+  repository-urile din `src/backend`.
+- Formularele fac POST clasic catre aceeasi pagina; dupa o operatie reusita se
+  face redirect (Post-Redirect-Get). Reincarcarea de pagina e acceptabila.
+- `_crud_page.php` e renderer-ul comun (tabel + cautare + sortare + formular in
+  modal + confirmare de stergere). Fiecare pagina (`clienti.php`, `expedieri.php`,
+  ...) pregateste `$repo` si `$config`, apoi il include.
+- Fara build step (webpack/vite).

@@ -16,7 +16,7 @@ Raspunde rapid si corect la intrebarile clientilor, fara interventie umana de fi
 4. Raspunde in romana si engleza, in functie de limba folosita de client.
 
 # Skills/Tools
-- **Baza de date de tracking** — interogare SQL sau API prin care se cauta statusul unui AWB (ex: "in tranzit", "livrat", "returnat"). Vezi `src/database/` pentru schema si `src/api/` pentru endpoint-urile de tracking.
+- **Baza de date de tracking** — interogare SQL prin care se cauta statusul unui AWB (ex: "in tranzit", "livrat", "returnat"). Vezi `src/database/` pentru schema si `src/backend/` pentru repository-urile de acces la date.
 - **Baza de cunostinte (FAQ)** — document/tabel cu raspunsuri standard (politici, termeni de livrare, tarife).
 - **Sistem de ticketing** — daca problema nu se rezolva automat, se creeaza un tichet trimis catre un operator uman.
 

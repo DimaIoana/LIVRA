@@ -1,10 +1,13 @@
 :root {
-  --bg: #f4f6fb;
+  --bg: #eef1f8;
   --surface: #ffffff;
+  --surface-2: #f7f9fd;
   --border: #e2e7f0;
   --text: #1c2333;
   --text-muted: #6b7590;
-  --brand: #2f5cff;
+  --brand: #3355ff;
+  --brand-dark: #2440d8;
+  --brand-soft: #eaeeff;
   --ok: #12855a;
   --ok-bg: #e6f6ef;
   --fail: #c0304a;
@@ -12,6 +15,10 @@
   --warn: #8a5a00;
   --warn-bg: #fdf2df;
   --radius: 12px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 1px 2px rgba(18, 24, 40, 0.06), 0 1px 3px rgba(18, 24, 40, 0.05);
+  --shadow: 0 6px 18px rgba(18, 24, 40, 0.08);
+  --shadow-lg: 0 16px 40px rgba(18, 24, 40, 0.16);
 }
 
 * {
@@ -27,25 +34,37 @@ body {
 }
 
 .header {
-  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--border);
 }
 
 .header__inner {
   max-width: 1500px;
   margin: 0 auto;
-  padding: 18px 24px;
+  padding: 14px 24px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 12px;
 }
 
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
   color: var(--brand);
   text-decoration: none;
+}
+
+.logo::before {
+  content: "📦";
+  font-size: 20px;
 }
 
 .logo:hover {
@@ -55,6 +74,8 @@ body {
 .header__subtitle {
   color: var(--text-muted);
   font-size: 14px;
+  padding-left: 12px;
+  border-left: 1px solid var(--border);
 }
 
 .container {
@@ -90,20 +111,30 @@ body {
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--brand);
   color: #fff;
   border: 0;
-  border-radius: 8px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 11px 20px;
   font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: opacity 0.15s;
+  box-shadow: 0 2px 6px rgba(51, 85, 255, 0.28);
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s, opacity 0.15s;
 }
 
 .btn:hover {
-  opacity: 0.9;
+  background: var(--brand-dark);
+  box-shadow: 0 6px 16px rgba(51, 85, 255, 0.34);
+}
+
+.btn:active {
+  transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -112,9 +143,16 @@ body {
 }
 
 .btn--ghost {
-  background: transparent;
-  color: var(--text-muted);
+  background: var(--surface);
+  color: var(--text);
   border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn--ghost:hover {
+  background: var(--surface-2);
+  border-color: #cfd6e6;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn--link {
@@ -129,6 +167,11 @@ body {
 
 .btn--danger {
   color: var(--fail);
+}
+
+/* Buton plin de stergere, folosit in confirmarea din modal. */
+.btn--danger-solid {
+  background: var(--fail);
 }
 
 .alert {
@@ -191,6 +234,13 @@ body {
 
 .table th[data-sort]:hover::after {
   opacity: 0.6;
+}
+
+/* Antetul e un link de sortare, dar arata ca textul de antet, nu ca un link. */
+.th__link {
+  color: inherit;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .table th.th--sorted {
@@ -372,12 +422,12 @@ body {
 }
 
 .nav__link:hover {
-  background: var(--bg);
+  background: var(--surface-2);
   color: var(--text);
 }
 
 .nav__link--active {
-  background: var(--bg);
+  background: var(--brand-soft);
   color: var(--brand);
 }
 
@@ -468,4 +518,476 @@ body {
   font-size: 13px;
   font-family: Consolas, monospace;
   word-break: break-word;
+}
+
+/* ==========================================================================
+   Magazin (e-commerce) - catalog "mozaic" colorat + cos
+   ========================================================================== */
+
+/* --- Titlu de pagina --- */
+.shop-hero {
+  margin-bottom: 20px;
+}
+
+.shop-hero__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.shop-hero__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 15px;
+}
+
+/* --- Bara de cautare / filtrare --- */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.toolbar__field {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar__icon {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.toolbar__field .toolbar__search {
+  padding-left: 40px;
+}
+
+.shop-catselect {
+  width: auto;
+  min-width: 200px;
+  flex: 0 0 auto;
+}
+
+/* --- Bara de actiuni "adauga selectatele" --- */
+.shop-actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.shop-actionbar__hint {
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Bara de jos ramane la indemana pe ecran cand derulezi catalogul lung. */
+.shop-actionbar--sticky {
+  position: sticky;
+  bottom: 16px;
+  z-index: 10;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(1.4) blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+/* --- Grila mozaic: tigle colorate, uniforme si aliniate --- */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 520px) {
+  .shop-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* --- Cardul de produs --- */
+.product {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.product:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.product:focus-within {
+  border-color: hsl(var(--h), 65%, 55%);
+}
+
+/* Card selectat: chenar colorat pe categorie + evidentiere. */
+.product:has(.product__check:checked) {
+  border-color: hsl(var(--h), 68%, 50%);
+  box-shadow: 0 0 0 3px hsl(var(--h), 75%, 88%), var(--shadow);
+}
+
+/* Banda colorata de sus, stabila pe categorie (--h): da aspectul de mozaic. */
+.product__media {
+  position: relative;
+  min-height: 150px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: linear-gradient(135deg, hsl(var(--h), 72%, 58%), hsl(var(--h), 70%, 46%));
+}
+
+/* Glifa decorativa (temă curierat), estompata in coltul benzii. */
+.product__media::after {
+  content: "📦";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 40px;
+  opacity: 0.22;
+  filter: grayscale(1) brightness(3);
+  pointer-events: none;
+}
+
+/* Poza produsului: umple banda, sub badge/checkbox. */
+.product__img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Cand exista poza reala: fara glifa 📦, cu voal jos ca badge-ul alb sa ramana lizibil. */
+.product__media--photo::after {
+  display: none;
+}
+
+.product__media--photo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(to top, rgba(18, 24, 40, 0.5), rgba(18, 24, 40, 0) 55%);
+  pointer-events: none;
+}
+
+.product__cat {
+  position: relative;
+  z-index: 1;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: hsl(var(--h), 70%, 30%);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* Checkbox de selectare: pastila alba in coltul benzii colorate. */
+.product__check {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 7px;
+  accent-color: hsl(var(--h), 68%, 45%);
+  box-shadow: 0 1px 4px rgba(18, 24, 40, 0.35);
+}
+
+.product__check:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Bifa "SELECTAT" care apare cand produsul e in selectie. */
+.product__flag {
+  position: absolute;
+  top: 12px;
+  left: 44px;
+  z-index: 2;
+  display: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #fff;
+  color: hsl(var(--h), 70%, 32%);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.product:has(.product__check:checked) .product__flag {
+  display: inline-block;
+}
+
+/* --- Corpul cardului --- */
+.product__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  flex: 1;
+}
+
+.product__name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.product__stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fail);
+}
+
+.product__stock::before {
+  content: "●";
+  font-size: 9px;
+}
+
+.product__stock--out {
+  color: var(--fail);
+}
+
+/* Randul de jos: pret proeminent + cantitate, impins in josul cardului. */
+.product__foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.product__price {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--brand);
+  letter-spacing: -0.3px;
+}
+
+.product__qty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product__qty-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.product__qty-input {
+  width: 64px;
+  text-align: center;
+  font-weight: 700;
+  padding: 8px;
+}
+
+/* --- Produs epuizat --- */
+.product--out {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.product--out .product__media {
+  background: linear-gradient(135deg, #9aa3b7, #6f7891);
+}
+
+.product--out .product__media::after {
+  filter: grayscale(1) brightness(3);
+  opacity: 0.28;
+}
+
+.product--out .product__cat {
+  color: #46506a;
+}
+
+.product--out:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Eticheta "EPUIZAT" pe banda. */
+.product__out-flag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fail);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   Cos de cumparaturi
+   ========================================================================== */
+
+/* Layout in doua coloane pe desktop: lista de produse + rezumat/checkout. */
+.cart {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .cart {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+}
+
+.cart__main {
+  min-width: 0;
+}
+
+.cart__side {
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .cart__side {
+    position: sticky;
+    top: 88px;
+  }
+}
+
+.cart__card {
+  padding: 6px 6px 0;
+}
+
+.cart-item__name {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.cart-item__cat {
+  display: inline-block;
+  margin: 2px 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.input--qty {
+  width: 80px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.table tfoot td {
+  padding: 14px 10px;
+  border-top: 2px solid var(--border);
+  font-size: 15px;
+}
+
+/* --- Card de checkout / rezumat --- */
+.shop-checkout {
+  padding: 22px;
+}
+
+.shop-checkout .form {
+  margin-top: 16px;
+}
+
+.cart-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border);
+}
+
+.cart-summary__label {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.cart-summary__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.form__actions--split {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.form__actions .btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* --- CTA magazin pe pagina principala. --- */
+.cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.cta__btn {
+  font-size: 15px;
+  padding: 12px 22px;
+}
+
+.cta__text {
+  color: var(--text-muted);
+  font-size: 14px;
 }

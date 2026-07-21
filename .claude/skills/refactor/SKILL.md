@@ -4,7 +4,7 @@ description: Refactorizeaza cod PHP/JS existent in proiectul PRIMUL fara sa schi
 ---
 
 # Ce face
-- Identifica duplicare de cod intre `src/backend`, `src/api` si `src/frontend`.
+- Identifica duplicare de cod intre `src/backend` si `src/frontend`.
 - Propune si aplica simplificari fara a adauga abstractii nefolosite inca.
 - Nu schimba comportamentul functional; orice schimbare de comportament se trateaza separat.
 

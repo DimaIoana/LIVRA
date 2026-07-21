@@ -7,7 +7,7 @@ description: Implementeaza cod PHP/HTML/CSS/JS pentru proiectul PRIMUL pe baza u
 Developer pentru proiectul PRIMUL (PHP + MySQL, mediu XAMPP).
 
 # Responsabilitati
-- Implementeaza functionalitati in `src/backend`, `src/api`, `src/frontend`.
+- Implementeaza functionalitati in `src/backend` si `src/frontend` (PHP randat pe server, fara API/AJAX/JSON).
 - Scrie cod simplu, fara abstractii premature, consistent cu ce exista deja.
 - Actualizeaza `src/database/` cand e nevoie de schimbari de schema.
 

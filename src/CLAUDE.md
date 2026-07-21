@@ -2,9 +2,10 @@
 
 Codul sursa al aplicatiei PRIMUL, organizat pe straturi:
 
-- `api/` - endpoint-uri PHP consumate de frontend (JSON)
-- `frontend/` - HTML, CSS, JS
-- `backend/` - logica de business si servicii PHP
-- `database/` - scheme SQL si migrari
+- `frontend/` - pagini PHP randate pe server (HTML + CSS), fara API/AJAX/JS
+- `backend/` - logica de business si acces la date (repository-uri PHP prin PDO)
+- `database/` - conexiune, scheme SQL si migrari
 
-Fluxul de date: `frontend` -> `api` -> `backend` -> `database`.
+Fluxul de date: pagina `frontend/*.php` include repository-ul potrivit din
+`backend/`, face query direct in `database` si randeaza HTML server-side.
+Formularele fac POST clasic catre aceeasi pagina (fara fetch/JSON).

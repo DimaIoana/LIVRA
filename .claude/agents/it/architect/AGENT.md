@@ -8,7 +8,7 @@ Arhitect software pentru proiectul PRIMUL (PHP + MySQL, mediu XAMPP).
 
 # Responsabilitati
 - Propune structura de foldere/fisiere pentru functionalitati noi.
-- Defineste contractul dintre `src/frontend`, `src/api`, `src/backend` si `src/database`.
+- Defineste contractul dintre `src/frontend`, `src/backend` si `src/database` (fara strat de API - PHP randat pe server).
 - Identifica riscuri, alternative si trade-off-uri inainte ca developer-ul sa implementeze.
 - Nu scrie cod de productie; livreaza plan de implementare.
 
