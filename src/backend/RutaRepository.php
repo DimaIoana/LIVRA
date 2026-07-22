@@ -19,12 +19,12 @@ class RutaRepository extends BaseRepository
 
     protected function columns()
     {
-        return ['Oras_origine', 'Oras_destinatie', 'Distanta_km'];
+        return ['Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza'];
     }
 
     protected function sortableColumns()
     {
-        return ['RutaID', 'Oras_origine', 'Oras_destinatie', 'Distanta_km'];
+        return ['RutaID', 'Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza'];
     }
 
     protected function searchableColumns()
@@ -36,13 +36,15 @@ class RutaRepository extends BaseRepository
     {
         $errors = [];
 
-        $origine = $this->validText($errors, $input, 'Oras_origine', 'Orasul de origine', 50);
-        $destinatie = $this->validText($errors, $input, 'Oras_destinatie', 'Orasul de destinatie', 50);
+        $origine = $this->validText($errors, $input, 'Oras_origine', 'Depozitul', 50);
+        $destinatie = $this->validText($errors, $input, 'Oras_destinatie', 'Destinatia client', 50);
         $distanta = $this->validInt($errors, $input, 'Distanta_km', 'Distanta', 1);
+        $durata = $this->validInt($errors, $input, 'Durata_min', 'Timpul de condus', 1);
+        $viteza = $this->validInt($errors, $input, 'viteza', 'Viteza', 1);
 
         // O ruta care incepe si se termina in acelasi oras nu are sens.
         if ($origine !== '' && mb_strtolower($origine) === mb_strtolower($destinatie)) {
-            $errors[] = 'Orasul de destinatie trebuie sa fie diferit de cel de origine.';
+            $errors[] = 'Destinatia client trebuie sa fie diferita de depozit.';
         }
 
         return [
@@ -51,6 +53,8 @@ class RutaRepository extends BaseRepository
                 'Oras_origine' => $origine,
                 'Oras_destinatie' => $destinatie,
                 'Distanta_km' => $distanta,
+                'Durata_min' => $durata,
+                'viteza' => $viteza,
             ],
         ];
     }

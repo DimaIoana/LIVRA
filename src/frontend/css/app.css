@@ -388,6 +388,36 @@ body {
   color: var(--text-muted);
 }
 
+/* Previzualizarea pozei curente in formular. */
+.field__preview {
+  display: block;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+  background: var(--surface-2);
+}
+
+/* Input de fisier: aliniat vizual cu celelalte campuri. */
+.input--file {
+  padding: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+}
+
+/* Miniatura pozei in tabelul de produse. */
+.thumb {
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
 .form__error {
   margin: 0 0 14px;
   padding: 10px 12px;

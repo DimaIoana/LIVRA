@@ -22,7 +22,7 @@ class InventoryRepository extends BaseRepository
 
     protected function columns()
     {
-        return ['Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Date'];
+        return ['Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Date', 'poze', 'depozit'];
     }
 
     protected function sortableColumns()
@@ -55,6 +55,22 @@ class InventoryRepository extends BaseRepository
             $date = $this->validDate($errors, $input, 'Date', 'Data');
         }
 
+        // Poza: numele fisierului deja mutat in folderul `poze/` (setat de
+        // stratul de upload din _crud_page.php). Optionala.
+        $poze = trim((string) ($input['poze'] ?? ''));
+        if (mb_strlen($poze) > 200) {
+            $errors[] = 'Numele pozei poate avea maxim 200 de caractere.';
+        }
+
+        // Depozitul unde se afla produsul: 1 = Arad, 2 = Braila, 3 = Pitesti.
+        $depozit = trim((string) ($input['depozit'] ?? ''));
+        if (!in_array($depozit, ['1', '2', '3'], true)) {
+            $errors[] = 'Alege locatia produsului (Arad, Braila sau Pitesti).';
+            $depozit = 0;
+        } else {
+            $depozit = (int) $depozit;
+        }
+
         return [
             'errors' => $errors,
             'data' => [
@@ -66,6 +82,8 @@ class InventoryRepository extends BaseRepository
                 'Monthly_Sales' => $monthly_sales,
                 'Unit_Cost' => $unit_cost,
                 'Date' => $date,
+                'poze' => $poze === '' ? null : $poze,
+                'depozit' => $depozit,
             ],
         ];
     }

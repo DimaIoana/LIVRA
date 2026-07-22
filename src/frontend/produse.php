@@ -5,6 +5,9 @@ require __DIR__ . '/../backend/InventoryRepository.php';
 
 $repo = new InventoryRepository($pdo);
 
+// Depozitele (locatiile) produselor. Codul se salveaza in coloana `depozit`.
+$depozite = [1 => 'Arad', 2 => 'Braila', 3 => 'Pitesti'];
+
 $config = [
     'active' => 'produse',
     'title' => 'Produse (stoc lunar)',
@@ -22,9 +25,18 @@ $config = [
 
     'columns' => [
         ['key' => 'InventoryID', 'label' => 'ID', 'type' => 'id'],
+        ['key' => 'poze', 'label' => 'Poza', 'type' => 'image', 'urlPrefix' => '../../poze/'],
         ['key' => 'Product_ID', 'label' => 'Cod'],
         ['key' => 'Product_Name', 'label' => 'Produs'],
         ['key' => 'Category', 'label' => 'Categorie', 'type' => 'tag'],
+        [
+            'key' => 'depozit',
+            'label' => 'Locatie',
+            'type' => 'tag',
+            'format' => function ($row) use ($depozite) {
+                return $depozite[(int) $row['depozit']] ?? 'Nespecificat';
+            },
+        ],
         [
             'key' => 'Stock_Level',
             'label' => 'Stoc',
@@ -43,7 +55,28 @@ $config = [
     'fields' => [
         ['name' => 'Product_ID', 'label' => 'Cod produs', 'type' => 'text', 'maxlength' => 10, 'required' => true],
         ['name' => 'Product_Name', 'label' => 'Nume produs', 'type' => 'text', 'maxlength' => 100, 'required' => true],
+        [
+            'name' => 'poze',
+            'label' => 'Poza produs',
+            'type' => 'image',
+            'uploadDir' => __DIR__ . '/../../poze',
+            'urlPrefix' => '../../poze/',
+            'accept' => 'image/*',
+            'hint' => 'JPG, PNG, GIF sau WEBP, max 2 MB. La editare, lasa gol ca sa pastrezi poza actuala.',
+        ],
         ['name' => 'Category', 'label' => 'Categorie', 'type' => 'text', 'maxlength' => 50, 'required' => true],
+        [
+            'name' => 'depozit',
+            'label' => 'Locatie (depozit)',
+            'type' => 'select',
+            'options' => array_merge(
+                [['id' => '', 'text' => '— alege depozit —']],
+                array_map(function ($id, $name) {
+                    return ['id' => $id, 'text' => $name];
+                }, array_keys($depozite), array_values($depozite))
+            ),
+            'hint' => 'Unde se afla fizic produsul: Arad, Braila sau Pitesti.',
+        ],
         ['name' => 'Stock_Level', 'label' => 'Stoc', 'type' => 'text', 'required' => true],
         ['name' => 'Reorder_Point', 'label' => 'Prag de recomanda', 'type' => 'text', 'required' => true],
         ['name' => 'Monthly_Sales', 'label' => 'Vanzari lunare', 'type' => 'text', 'required' => true],

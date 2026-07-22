@@ -50,6 +50,24 @@ function fmt_date($value)
     return count($parts) === 3 ? $parts[2] . '.' . $parts[1] . '.' . $parts[0] : $value;
 }
 
+/** Minute -> "6 h 30 min" / "45 min" / "6 h"; 0 sau gol -> '-'. */
+function fmt_durata($minutes)
+{
+    $m = (int) $minutes;
+    if ($m <= 0) {
+        return '-';
+    }
+
+    $h = intdiv($m, 60);
+    $min = $m % 60;
+
+    if ($h === 0) {
+        return $min . ' min';
+    }
+
+    return $min === 0 ? $h . ' h' : $h . ' h ' . $min . ' min';
+}
+
 /** 1234.5 -> 1.234,50 lei; gol -> '-'. */
 function fmt_money($value)
 {
@@ -58,6 +76,90 @@ function fmt_money($value)
     }
 
     return number_format((float) $value, 2, ',', '.') . ' lei';
+}
+
+/**
+ * Numele fisierului dintr-o valoare de tip poza (cale absoluta de disc SAU
+ * doar nume) transformat in URL web, cu un prefix dat (ex: '../../poze/').
+ * Gol -> ''.
+ */
+function media_url($stored, $prefix)
+{
+    $stored = trim((string) $stored);
+    if ($stored === '') {
+        return '';
+    }
+
+    return $prefix . rawurlencode(basename(str_replace('\\', '/', $stored)));
+}
+
+/** Extensia canonica daca fisierul e o imagine acceptata, altfel null. */
+function image_ext($path)
+{
+    $info = @getimagesize($path);
+    if ($info === false) {
+        return null;
+    }
+
+    switch ($info[2]) {
+        case IMAGETYPE_JPEG: return 'jpg';
+        case IMAGETYPE_PNG:  return 'png';
+        case IMAGETYPE_GIF:  return 'gif';
+        case IMAGETYPE_WEBP: return 'webp';
+        default:             return null;
+    }
+}
+
+/**
+ * Trateaza un camp de formular de tip `image` la POST. Daca s-a incarcat un
+ * fisier nou valid, il muta in folderul configurat si intoarce numele salvat
+ * (de pus in DB). Daca nu s-a ales un fisier, intoarce null (se pastreaza poza
+ * existenta, transmisa printr-un input hidden). Erorile se adauga in $errors.
+ */
+function handle_image_field(array $field, array &$errors)
+{
+    $name = $field['name'];
+    $file = $_FILES[$name] ?? null;
+
+    // Niciun fisier nou ales -> pastreaza valoarea existenta din $_POST (hidden).
+    if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return null;
+    }
+
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $errors[] = 'Incarcarea pozei a esuat (cod ' . (int) $file['error'] . ').';
+        return null;
+    }
+
+    $maxSize = $field['maxSize'] ?? 2 * 1024 * 1024;
+    if ($file['size'] > $maxSize) {
+        $errors[] = 'Poza e prea mare (max ' . round($maxSize / 1048576, 1) . ' MB).';
+        return null;
+    }
+
+    // Extensia se stabileste dupa continut, nu dupa numele venit de la client.
+    $ext = image_ext($file['tmp_name']);
+    if ($ext === null) {
+        $errors[] = 'Fisierul trebuie sa fie o imagine (JPG, PNG, GIF sau WEBP).';
+        return null;
+    }
+
+    $dir = $field['uploadDir'] ?? '';
+    if ($dir === '' || (!is_dir($dir) && !@mkdir($dir, 0777, true))) {
+        $errors[] = 'Nu s-a putut pregati folderul pentru poze.';
+        return null;
+    }
+
+    // Nume propriu, unic: evita suprascrierile si numele periculoase din client.
+    $filename = date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $dest = rtrim($dir, '/\\') . DIRECTORY_SEPARATOR . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $dest)) {
+        $errors[] = 'Nu s-a putut salva poza pe disc.';
+        return null;
+    }
+
+    return $filename;
 }
 
 /** Pune un mesaj care va fi aratat dupa redirect. */
@@ -127,15 +229,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'save') {
+        // Campurile de tip `image` se trateaza inainte de validare: fisierul
+        // mutat isi lasa numele in $_POST, ca repository-ul sa-l salveze ca pe o
+        // valoare text obisnuita. Fara fisier nou, valoarea existenta (input
+        // hidden) ramane neatinsa.
+        $uploadErrors = [];
+        foreach ($config['fields'] as $field) {
+            if (($field['type'] ?? '') !== 'image') {
+                continue;
+            }
+
+            $stored = handle_image_field($field, $uploadErrors);
+            if ($stored !== null) {
+                $_POST[$field['name']] = $stored;
+            }
+        }
+
         $result = $repo->validate($_POST);
+        $errors = array_merge($uploadErrors, $result['errors']);
         $id = trim((string) ($_POST[$pk] ?? ''));
 
-        if ($result['errors']) {
+        if ($errors) {
             // Reafisam formularul cu valorile introduse si erorile.
             $formOpen = true;
             $formMode = $id !== '' ? 'edit' : 'add';
             $formValues = $_POST;
-            $formErrors = $result['errors'];
+            $formErrors = $errors;
         } elseif ($id !== '') {
             if ($repo->update((int) $id, $result['data'])) {
                 flash_set('Inregistrare modificata.', 'ok');
@@ -215,6 +334,15 @@ $navLinks = [
     'produse' => ['produse.php', 'Produse'],
 ];
 
+// Formularul are nevoie de enctype multipart doar daca exista un camp de fisier.
+$hasUpload = false;
+foreach ($config['fields'] as $field) {
+    if (($field['type'] ?? '') === 'image') {
+        $hasUpload = true;
+        break;
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="ro">
@@ -291,13 +419,21 @@ $navLinks = [
               ?>
               <td class="<?= h(trim(implode(' ', $classes))) ?>">
                 <?php if ($type === 'tag'): ?>
-                  <span class="tag<?= isset($col['tagClass']) ? ' ' . h($col['tagClass']($row)) : '' ?>"><?= h($row[$col['key']]) ?></span>
+                  <span class="tag<?= isset($col['tagClass']) ? ' ' . h($col['tagClass']($row)) : '' ?>"><?= h(isset($col['format']) ? $col['format']($row) : $row[$col['key']]) ?></span>
+                <?php elseif ($type === 'image'): ?>
+                  <?php $thumb = media_url($row[$col['key']], $col['urlPrefix'] ?? ''); ?>
+                  <?php if ($thumb !== ''): ?>
+                    <img class="thumb" src="<?= h($thumb) ?>" alt="">
+                  <?php else: ?>
+                    -
+                  <?php endif; ?>
                 <?php elseif ($type === 'date'): ?>
                   <?= h(fmt_date($row[$col['key']])) ?>
                 <?php elseif ($type === 'money'): ?>
                   <?= h(fmt_money($row[$col['key']])) ?>
                 <?php else: ?>
-                  <?= ($row[$col['key']] === null || $row[$col['key']] === '') ? '-' : h($row[$col['key']]) ?>
+                  <?php $cellRaw = isset($col['format']) ? $col['format']($row) : $row[$col['key']]; ?>
+                  <?= ($cellRaw === null || $cellRaw === '') ? '-' : h($cellRaw) ?>
                 <?php endif; ?>
               </td>
             <?php endforeach; ?>
@@ -323,7 +459,7 @@ $navLinks = [
         <?= $formMode === 'edit' ? 'Editeaza ' . h($config['entityLabel']) : h($config['addLabel']) ?>
       </h2>
 
-      <form class="form" method="post" action="<?= h($page . $listQuery) ?>">
+      <form class="form" method="post" action="<?= h($page . $listQuery) ?>"<?= $hasUpload ? ' enctype="multipart/form-data"' : '' ?>>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="<?= h($pk) ?>" value="<?= h($formValues[$pk] ?? '') ?>">
 
@@ -354,6 +490,16 @@ $navLinks = [
                   <option value="<?= h($optValue) ?>" <?= ((string) $optValue === (string) $value) ? 'selected' : '' ?>><?= h($optText) ?></option>
                 <?php endforeach; ?>
               </select>
+            <?php elseif (($field['type'] ?? 'text') === 'image'): ?>
+              <?php $preview = media_url($value, $field['urlPrefix'] ?? ''); ?>
+              <?php if ($preview !== ''): ?>
+                <img class="field__preview" src="<?= h($preview) ?>" alt="Poza curenta">
+              <?php endif; ?>
+              <!-- Pastreaza poza existenta daca nu se incarca una noua. -->
+              <input type="hidden" name="<?= h($field['name']) ?>" value="<?= h($value) ?>">
+              <input class="input input--file" type="file"
+                     name="<?= h($field['name']) ?>"
+                     accept="<?= h($field['accept'] ?? 'image/*') ?>">
             <?php else: ?>
               <input class="input"
                      type="<?= (($field['type'] ?? 'text') === 'date') ? 'date' : 'text' ?>"
