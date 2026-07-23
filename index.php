@@ -95,6 +95,11 @@ $sectiuni = [
             <span class="cta__text">Catalog pe categorii, cos de cumparaturi si plasare de comenzi pentru clienti.</span>
         </div>
 
+        <div class="cta">
+            <a class="btn cta__btn" href="src/frontend/portal_client.php">Login clienti &rarr;</a>
+            <span class="cta__text">Clientul isi alege numele si urmareste coletul dupa AWB: produs, distanta, timp si cat timp a trecut.</span>
+        </div>
+
         <p class="subsol">
             MySQL <?= htmlspecialchars($versiune_mysql) ?> &middot;
             <a href="src/frontend/test.php">Pagina de test</a>

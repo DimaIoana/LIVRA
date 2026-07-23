@@ -5,6 +5,15 @@ require __DIR__ . '/../backend/RutaRepository.php';
 
 $repo = new RutaRepository($pdo);
 
+// Tipurile de drum, de la cel mai usor/rapid la cel mai greu/lent.
+// autostrada > dn (drum national) > drum judetean > drum comunal.
+$tipuriStrada = [
+    'autostrada' => 'Autostrada',
+    'dn' => 'Drum national (DN)',
+    'drum judetean' => 'Drum judetean',
+    'drum comunal' => 'Drum comunal',
+];
+
 $config = [
     'active' => 'rute',
     'title' => 'Gestionare rute',
@@ -41,6 +50,14 @@ $config = [
                 return $row['viteza'] . ' km/h';
             },
         ],
+        [
+            'key' => 'tip_strada',
+            'label' => 'Tip drum',
+            'type' => 'tag',
+            'format' => function ($row) use ($tipuriStrada) {
+                return $tipuriStrada[$row['tip_strada']] ?? $row['tip_strada'];
+            },
+        ],
     ],
 
     'fields' => [
@@ -49,6 +66,15 @@ $config = [
         ['name' => 'Distanta_km', 'label' => 'Distanta (km)', 'type' => 'text', 'required' => true],
         ['name' => 'Durata_min', 'label' => 'Timp de condus (minute)', 'type' => 'text', 'required' => true, 'hint' => 'Timp aproximativ de condus, in minute (ex: 285 = 4 h 45 min).'],
         ['name' => 'viteza', 'label' => 'Viteza (km/h)', 'type' => 'text', 'required' => true, 'hint' => 'Viteza medie pe ruta, in km/h.'],
+        [
+            'name' => 'tip_strada',
+            'label' => 'Tip drum',
+            'type' => 'select',
+            'options' => array_map(function ($id, $text) {
+                return ['id' => $id, 'text' => $text];
+            }, array_keys($tipuriStrada), array_values($tipuriStrada)),
+            'hint' => 'De la cel mai rapid la cel mai greu: autostrada > DN > judetean > comunal.',
+        ],
     ],
 ];
 

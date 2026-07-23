@@ -19,12 +19,12 @@ class RutaRepository extends BaseRepository
 
     protected function columns()
     {
-        return ['Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza'];
+        return ['Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza', 'tip_strada'];
     }
 
     protected function sortableColumns()
     {
-        return ['RutaID', 'Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza'];
+        return ['RutaID', 'Oras_origine', 'Oras_destinatie', 'Distanta_km', 'Durata_min', 'viteza', 'tip_strada'];
     }
 
     protected function searchableColumns()
@@ -41,6 +41,8 @@ class RutaRepository extends BaseRepository
         $distanta = $this->validInt($errors, $input, 'Distanta_km', 'Distanta', 1);
         $durata = $this->validInt($errors, $input, 'Durata_min', 'Timpul de condus', 1);
         $viteza = $this->validInt($errors, $input, 'viteza', 'Viteza', 1);
+        $tipStrada = $this->validEnum($errors, $input, 'tip_strada', 'Tipul de strada',
+            ['autostrada', 'dn', 'drum judetean', 'drum comunal']);
 
         // O ruta care incepe si se termina in acelasi oras nu are sens.
         if ($origine !== '' && mb_strtolower($origine) === mb_strtolower($destinatie)) {
@@ -55,6 +57,7 @@ class RutaRepository extends BaseRepository
                 'Distanta_km' => $distanta,
                 'Durata_min' => $durata,
                 'viteza' => $viteza,
+                'tip_strada' => $tipStrada,
             ],
         ];
     }

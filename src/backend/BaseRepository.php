@@ -230,6 +230,36 @@ abstract class BaseRepository
         return $value;
     }
 
+    /**
+     * Valideaza o data cu ora. Accepta "Y-m-d H:i", "Y-m-d H:i:s" sau formatul
+     * de la input-ul datetime-local ("Y-m-dTH:i"). Normalizeaza la "Y-m-d H:i:s".
+     */
+    protected function validDateTime(array &$errors, $input, $key, $label, $required = true)
+    {
+        $value = str_replace('T', ' ', trim((string) ($input[$key] ?? '')));
+
+        if ($value === '') {
+            if ($required) {
+                $errors[] = $label . ' este obligatorie.';
+            }
+
+            return $required ? $value : null;
+        }
+
+        $dt = DateTime::createFromFormat('Y-m-d H:i:s', $value);
+        if ($dt === false) {
+            $dt = DateTime::createFromFormat('Y-m-d H:i', $value);
+        }
+
+        if ($dt === false) {
+            $errors[] = $label . ' trebuie sa fie o data si ora valide.';
+
+            return $value;
+        }
+
+        return $dt->format('Y-m-d H:i:s');
+    }
+
     protected function validEnum(array &$errors, $input, $key, $label, array $allowed)
     {
         $value = (string) ($input[$key] ?? '');

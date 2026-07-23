@@ -20,6 +20,16 @@ $config = [
         return '#' . $row['ComandaID'] . ' - ' . $row['ClientNume'];
     },
 
+    // Buton catre back office-ul de expediere cu optimizare rute.
+    'rowLinks' => [
+        [
+            'label' => 'Expediaza',
+            'href' => function ($row) {
+                return 'expediere_comanda.php?comanda=' . (int) $row['ComandaID'];
+            },
+        ],
+    ],
+
     'columns' => [
         ['key' => 'ComandaID', 'label' => 'ID', 'type' => 'id'],
         ['key' => 'ClientNume', 'label' => 'Client'],

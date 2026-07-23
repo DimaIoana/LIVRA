@@ -38,16 +38,31 @@ function h($value)
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-/** 2025-03-01 -> 01.03.2025; gol -> '-'. */
+/**
+ * Data in format european: 2025-03-01 -> 01.03.2025;
+ * 2025-03-01 14:30:00 -> 01.03.2025 14:30; gol -> '-'.
+ */
 function fmt_date($value)
 {
     if ($value === null || $value === '') {
         return '-';
     }
 
-    $parts = explode('-', $value);
+    $value = trim((string) $value);
+    $parts = explode(' ', $value);          // [data, (ora)]
+    $d = explode('-', $parts[0]);
+    if (count($d) !== 3) {
+        return $value;
+    }
 
-    return count($parts) === 3 ? $parts[2] . '.' . $parts[1] . '.' . $parts[0] : $value;
+    $out = $d[2] . '.' . $d[1] . '.' . $d[0];
+
+    if (isset($parts[1]) && $parts[1] !== '') {
+        $t = explode(':', $parts[1]);
+        $out .= ' ' . $t[0] . ':' . ($t[1] ?? '00');   // HH:MM
+    }
+
+    return $out;
 }
 
 /** Minute -> "6 h 30 min" / "45 min" / "6 h"; 0 sau gol -> '-'. */
@@ -283,7 +298,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !$formOpen) {
 
         foreach ($config['fields'] as $field) {
             if (($field['default'] ?? '') === 'today') {
-                $formValues[$field['name']] = date('Y-m-d');
+                $formValues[$field['name']] = ($field['type'] ?? '') === 'datetime'
+                    ? date('Y-m-d H:i:s')
+                    : date('Y-m-d');
             }
         }
     } elseif (isset($_GET['edit'])) {
@@ -438,6 +455,11 @@ foreach ($config['fields'] as $field) {
               </td>
             <?php endforeach; ?>
             <td class="row-actions">
+              <?php if (!empty($config['rowLinks'])): ?>
+                <?php foreach ($config['rowLinks'] as $rl): ?>
+                  <a class="btn--link" href="<?= h($rl['href']($row)) ?>"><?= h($rl['label']) ?></a>
+                <?php endforeach; ?>
+              <?php endif; ?>
               <a class="btn--link" href="<?= h($page . $listQuery) ?>&edit=<?= (int) $row[$pk] ?>">Editeaza</a>
               <a class="btn--link btn--danger" href="<?= h($page . $listQuery) ?>&delete=<?= (int) $row[$pk] ?>">Sterge</a>
             </td>
@@ -500,6 +522,12 @@ foreach ($config['fields'] as $field) {
               <input class="input input--file" type="file"
                      name="<?= h($field['name']) ?>"
                      accept="<?= h($field['accept'] ?? 'image/*') ?>">
+            <?php elseif (($field['type'] ?? 'text') === 'datetime'): ?>
+              <?php $dtVal = $value !== '' ? str_replace(' ', 'T', substr((string) $value, 0, 16)) : ''; ?>
+              <input class="input" type="datetime-local"
+                     name="<?= h($field['name']) ?>"
+                     value="<?= h($dtVal) ?>"
+                     <?= !empty($field['required']) ? 'required' : '' ?>>
             <?php else: ?>
               <input class="input"
                      type="<?= (($field['type'] ?? 'text') === 'date') ? 'date' : 'text' ?>"

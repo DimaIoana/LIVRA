@@ -22,6 +22,7 @@ $config = [
 
     'columns' => [
         ['key' => 'ExpediereID', 'label' => 'ID', 'type' => 'id'],
+        ['key' => 'awb', 'label' => 'AWB'],
         ['key' => 'ClientNume', 'label' => 'Client'],
         ['key' => 'SoferNume', 'label' => 'Sofer'],
         ['key' => 'Ruta', 'label' => 'Ruta'],
@@ -52,12 +53,12 @@ $config = [
         ['name' => 'SoferID', 'label' => 'Sofer', 'type' => 'select', 'optionsFrom' => 'soferi'],
         ['name' => 'RutaID', 'label' => 'Ruta', 'type' => 'select', 'optionsFrom' => 'rute'],
         ['name' => 'Status_expediere', 'label' => 'Status', 'type' => 'select', 'optionsFrom' => 'statusuri'],
-        ['name' => 'Data_expediere', 'label' => 'Data expediere', 'type' => 'date', 'default' => 'today'],
-        ['name' => 'Data_livrare_estimata', 'label' => 'Data livrare estimata', 'type' => 'date'],
+        ['name' => 'Data_expediere', 'label' => 'Data expediere', 'type' => 'datetime', 'default' => 'today'],
+        ['name' => 'Data_livrare_estimata', 'label' => 'Data livrare estimata', 'type' => 'datetime'],
         [
             'name' => 'Data_livrare_efectiva',
             'label' => 'Data livrare efectiva',
-            'type' => 'date',
+            'type' => 'datetime',
             'hint' => 'Se lasa gol cat timp coletul nu a ajuns la client.',
         ],
         ['name' => 'Valoare_expediere', 'label' => 'Valoare (lei)', 'type' => 'text'],

@@ -37,7 +37,7 @@ class ExpediereRepository extends BaseRepository
     protected function sortableColumns()
     {
         return [
-            'ExpediereID', 'ClientNume', 'SoferNume', 'Ruta', 'Data_expediere',
+            'ExpediereID', 'awb', 'ClientNume', 'SoferNume', 'Ruta', 'Data_expediere',
             'Data_livrare_estimata', 'Data_livrare_efectiva',
             'Status_expediere', 'Valoare_expediere',
         ];
@@ -53,7 +53,7 @@ class ExpediereRepository extends BaseRepository
      */
     protected function selectFrom()
     {
-        return 'SELECT e.ExpediereID, e.ClientID, e.SoferID, e.RutaID,
+        return 'SELECT e.ExpediereID, e.awb, e.ClientID, e.SoferID, e.RutaID,
                        e.Data_expediere, e.Data_livrare_estimata, e.Data_livrare_efectiva,
                        e.Status_expediere, e.Valoare_expediere,
                        c.Nume AS ClientNume,
@@ -88,9 +88,9 @@ class ExpediereRepository extends BaseRepository
         if ($search !== '') {
             $sql .= ' WHERE c.Nume LIKE :s1 OR s.Nume LIKE :s2
                         OR r.Oras_origine LIKE :s3 OR r.Oras_destinatie LIKE :s4
-                        OR e.Status_expediere LIKE :s5';
+                        OR e.Status_expediere LIKE :s5 OR e.awb LIKE :s6';
             $term = '%' . $search . '%';
-            $params = ['s1' => $term, 's2' => $term, 's3' => $term, 's4' => $term, 's5' => $term];
+            $params = ['s1' => $term, 's2' => $term, 's3' => $term, 's4' => $term, 's5' => $term, 's6' => $term];
         }
 
         if (!in_array($sort, $this->sortableColumns(), true)) {
@@ -121,11 +121,11 @@ class ExpediereRepository extends BaseRepository
 
         $status = $this->validEnum($errors, $input, 'Status_expediere', 'Statusul', self::STATUSURI);
 
-        $data_expediere = $this->validDate($errors, $input, 'Data_expediere', 'Data expedierii');
-        $data_estimata = $this->validDate($errors, $input, 'Data_livrare_estimata', 'Data livrarii estimate');
+        $data_expediere = $this->validDateTime($errors, $input, 'Data_expediere', 'Data expedierii');
+        $data_estimata = $this->validDateTime($errors, $input, 'Data_livrare_estimata', 'Data livrarii estimate');
 
         // Optionala: un colet in tranzit nu are inca data de livrare efectiva.
-        $data_efectiva = $this->validDate($errors, $input, 'Data_livrare_efectiva', 'Data livrarii efective', false);
+        $data_efectiva = $this->validDateTime($errors, $input, 'Data_livrare_efectiva', 'Data livrarii efective', false);
         if ($data_efectiva === '') {
             $data_efectiva = null;
         }

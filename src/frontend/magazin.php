@@ -63,6 +63,7 @@ $flash = shop_flash_get();
     <nav class="nav">
       <a class="nav__link nav__link--active" href="magazin.php">Produse</a>
       <a class="nav__link" href="cos.php">Cos<?= cos_bucati() ? ' (' . (int) cos_bucati() . ')' : '' ?></a>
+      <a class="nav__link" href="portal_client.php">Login clienti</a>
     </nav>
   </div>
 </header>
