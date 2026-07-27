@@ -29,10 +29,11 @@ Aplicatia trebuie sa fie usor de folosit, dar sa aiba interfata frumoasa
 - Root web: `C:\xampp\htdocs\CLAUDE\PRIMUL`
 
 ## Resurse in tools/utilities/
-Documente de referinta puse de user, neintegrate inca in agenti/skill-uri (doar notate, fara actiune):
-- `ghidul_curierului.pdf` - manual "Pandoras Courier" pentru curierul de teren: dictionar de termeni (AWB, ramburs, despagubire), reguli de comunicare cu clientul, proceduri de ridicare/livrare, etichetare speciala (fragil/frig), verificare vehicul, GDPR.
-- `Ghid-de-ambalare.pdf` - ghid FAN Courier despre ambalare corecta: limite greutate/dimensiuni, produse interzise la transport, stivuire paleti.
-- `rute romania.pdf` - harta de baza a Romaniei (doar imagine, fara date structurate).
-- `duba mercedes.pdf` - fisier prea mare pentru a fi citit direct (peste 20MB).
+Fisiere puse de user. Cele Excel sunt deja integrate; PDF-urile raman doar notate.
+- `distanta_orase.xlsx` - **integrat**: distantele rutiere intre orase, sursa pentru km-ii rutelor (vezi `src/database/seed_rute.sql`).
+- `timp_orase.xlsx` - **integrat**: timpii de condus intre orase, sursa pentru `Durata_min` al rutelor.
+- `ghidul_curierului.pdf` - manual "Pandoras Courier" pentru curierul de teren: dictionar de termeni (AWB, ramburs, despagubire), reguli de comunicare cu clientul, proceduri de ridicare/livrare, etichetare speciala (fragil/frig), verificare vehicul, GDPR. (neintegrat)
+- `Ghid-de-ambalare.pdf` - ghid FAN Courier despre ambalare corecta: limite greutate/dimensiuni, produse interzise la transport, stivuire paleti. (neintegrat)
+- `duba mercedes.pdf` - fisier prea mare pentru a fi citit direct (peste 20MB). (neintegrat)
 
-Daca se decide integrarea lor (ex: agent dedicat curierului de teren, skill de politica ambalare), acestea sunt sursele de plecare.
+Documentatia de proiect e in `docs/` (`README.md`, `CHANGELOG.md`, `algoritm_optimizare_rute.md`). PDF-urile neintegrate raman sursele de plecare daca se decide integrarea lor (ex: agent curier de teren, skill de politica ambalare).
