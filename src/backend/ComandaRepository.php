@@ -47,7 +47,17 @@ class ComandaRepository extends BaseRepository
     {
         return 'SELECT c.ComandaID, c.ClientID, c.Status, c.Total, c.Observatii,
                        DATE(c.Data_comanda) AS Data_comanda,
-                       cl.Nume AS ClientNume
+                       cl.Nume AS ClientNume,
+                       (SELECT GROUP_CONCAT(CONCAT(cp.Cantitate, \' x \', cp.Product_Name)
+                                            ORDER BY cp.LinieID SEPARATOR \', \')
+                          FROM comenzi_produse cp WHERE cp.ComandaID = c.ComandaID) AS Produse,
+                       (SELECT COUNT(*) FROM comenzi_produse cp
+                         WHERE cp.ComandaID = c.ComandaID) AS NrLinii,
+                       (SELECT COALESCE(SUM(cp.Subtotal), 0) FROM comenzi_produse cp
+                         WHERE cp.ComandaID = c.ComandaID) AS TotalLinii,
+                       (SELECT COUNT(*) FROM expedieri e
+                           JOIN comenzi_produse cp ON cp.LinieID = e.LinieID
+                          WHERE cp.ComandaID = c.ComandaID) AS NrExpediate
                 FROM comenzi c
                 JOIN clienti cl ON cl.ClientID = c.ClientID';
     }
@@ -63,8 +73,8 @@ class ComandaRepository extends BaseRepository
     }
 
     /**
-     * Cautarea acopera numele clientului, statusul si observatiile, deci se scrie
-     * manual peste coloanele din JOIN.
+     * Cautarea acopera numele clientului, statusul, observatiile si produsele din
+     * comanda, deci se scrie manual peste coloanele din JOIN.
      */
     public function getAll($search = '', $sort = null, $dir = 'desc')
     {
@@ -73,9 +83,12 @@ class ComandaRepository extends BaseRepository
 
         $search = trim($search);
         if ($search !== '') {
-            $sql .= ' WHERE cl.Nume LIKE :s1 OR c.Status LIKE :s2 OR c.Observatii LIKE :s3';
+            $sql .= ' WHERE cl.Nume LIKE :s1 OR c.Status LIKE :s2 OR c.Observatii LIKE :s3
+                      OR EXISTS (SELECT 1 FROM comenzi_produse cps
+                                  WHERE cps.ComandaID = c.ComandaID
+                                    AND (cps.Product_Name LIKE :s4 OR cps.Product_ID LIKE :s5))';
             $term = '%' . $search . '%';
-            $params = ['s1' => $term, 's2' => $term, 's3' => $term];
+            $params = ['s1' => $term, 's2' => $term, 's3' => $term, 's4' => $term, 's5' => $term];
         }
 
         if (!in_array($sort, $this->sortableColumns(), true)) {

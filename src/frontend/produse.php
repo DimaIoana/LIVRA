@@ -48,7 +48,8 @@ $config = [
         ],
         ['key' => 'Reorder_Point', 'label' => 'Prag', 'type' => 'number'],
         ['key' => 'Monthly_Sales', 'label' => 'Vanzari/luna', 'type' => 'number'],
-        ['key' => 'Unit_Cost', 'label' => 'Cost unitar', 'type' => 'money'],
+        ['key' => 'Unit_Cost', 'label' => 'Pret unitar', 'type' => 'money'],
+        ['key' => 'Cost_Unitar', 'label' => 'Cost unitar', 'type' => 'money'],
         ['key' => 'Date', 'label' => 'Luna', 'type' => 'date'],
     ],
 
@@ -80,7 +81,19 @@ $config = [
         ['name' => 'Stock_Level', 'label' => 'Stoc', 'type' => 'text', 'required' => true],
         ['name' => 'Reorder_Point', 'label' => 'Prag de recomanda', 'type' => 'text', 'required' => true],
         ['name' => 'Monthly_Sales', 'label' => 'Vanzari lunare', 'type' => 'text', 'required' => true],
-        ['name' => 'Unit_Cost', 'label' => 'Cost unitar (lei)', 'type' => 'text', 'required' => true],
+        [
+            'name' => 'Unit_Cost',
+            'label' => 'Pret unitar (lei)',
+            'type' => 'text',
+            'required' => true,
+            'hint' => 'Pretul de vanzare, cel afisat clientului in magazin.',
+        ],
+        [
+            'name' => 'Cost_Unitar',
+            'label' => 'Cost unitar (lei)',
+            'type' => 'text',
+            'hint' => 'Cat costa produsul pe firma (achizitie). Optional.',
+        ],
         [
             'name' => 'Date',
             'label' => 'Luna (data raportarii)',

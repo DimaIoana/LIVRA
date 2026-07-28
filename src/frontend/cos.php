@@ -2,6 +2,9 @@
 
 require __DIR__ . '/_shop.php';
 
+// Trebuie sa fii logat ca sa cumperi.
+cere_login();
+
 $page = 'cos.php';
 $errors = [];
 
@@ -33,8 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($action === 'checkout') {
+        // Comanda se plaseaza pentru clientul logat, nu dintr-un dropdown.
         $rezultat = $magazin->creeazaComanda(
-            $_POST['ClientID'] ?? null,
+            client_logat()['id'],
             cos_get(),
             $_POST['observatii'] ?? ''
         );
@@ -53,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // --- Date pentru afisare ---
 $cos = cos_get();
 $produse = $magazin->produseCurente(array_keys($cos));
-$clienti = $magazin->clientiOptiuni();
 $flash = shop_flash_get();
 
 // Construieste liniile afisabile + totalul, pastrand ordinea din cos.
@@ -103,12 +106,15 @@ foreach ($cos as $code => $qty) {
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="magazin.php">PRIMUL</a>
     <span class="header__subtitle">Cos de cumparaturi</span>
     <nav class="nav">
       <a class="nav__link" href="magazin.php">Produse</a>
       <a class="nav__link nav__link--active" href="cos.php">Cos<?= cos_bucati() ? ' (' . (int) cos_bucati() . ')' : '' ?></a>
-      <a class="nav__link" href="portal_client.php">Login clienti</a>
+      <a class="nav__link" href="portal_client.php">Urmarire colet</a>
+      <?php $cl = client_logat(); ?>
+      <span class="nav__link" style="color:var(--text-muted)">Salut, <?= h($cl['nume']) ?></span>
+      <a class="nav__link" href="login.php?logout=1">Iesire</a>
     </nav>
   </div>
 </header>
@@ -213,15 +219,10 @@ foreach ($cos as $code => $qty) {
           <form method="post" action="cos.php" class="form">
             <input type="hidden" name="action" value="checkout">
 
-            <label class="field">
+            <div class="field">
               <span class="field__label">Client</span>
-              <select class="input" name="ClientID" required>
-                <option value="">— alege clientul —</option>
-                <?php foreach ($clienti as $c): ?>
-                  <option value="<?= (int) $c['id'] ?>"><?= h($c['text']) ?></option>
-                <?php endforeach; ?>
-              </select>
-            </label>
+              <div class="input" style="background:var(--surface-2)"><?= h(client_logat()['nume']) ?></div>
+            </div>
 
             <label class="field">
               <span class="field__label">Observatii (optional)</span>

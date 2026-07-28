@@ -15,6 +15,9 @@ class ExpediereRepository extends BaseRepository
     /** Statusuri la care coletul nu a ajuns inca la destinatar. */
     const STATUSURI_NELIVRAT = ['In tranzit', 'Returnat'];
 
+    /** Orasul depozitului (origine ruta) -> codul de depozit din inventory. */
+    const DEPOZIT_COD = ['Arad' => 1, 'Braila' => 2, 'Pitesti' => 3];
+
     protected function table()
     {
         return 'expedieri';
@@ -55,7 +58,7 @@ class ExpediereRepository extends BaseRepository
     {
         return 'SELECT e.ExpediereID, e.awb, e.ClientID, e.SoferID, e.RutaID,
                        e.Data_expediere, e.Data_livrare_estimata, e.Data_livrare_efectiva,
-                       e.Status_expediere, e.Valoare_expediere,
+                       e.Status_expediere, e.Valoare_expediere, e.cost_carburant,
                        c.Nume AS ClientNume,
                        s.Nume AS SoferNume,
                        CONCAT(r.Oras_origine, " - ", r.Oras_destinatie) AS Ruta
@@ -163,6 +166,99 @@ class ExpediereRepository extends BaseRepository
                 'Valoare_expediere' => $valoare,
             ],
         ];
+    }
+
+    /**
+     * La creare/modificare, sincronizeaza si stocul: cand expedierea e livrata,
+     * cantitatea livrata se scade din inventory (o singura data).
+     */
+    public function create(array $data)
+    {
+        $id = parent::create($data);
+        $this->sincronizeazaStoc($id);
+
+        return $id;
+    }
+
+    public function update($id, array $data)
+    {
+        $ok = parent::update($id, $data);
+        if ($ok) {
+            $this->sincronizeazaStoc($id);
+        }
+
+        return $ok;
+    }
+
+    /**
+     * Daca expedierea e "Livrat" si stocul nu a fost inca scazut, scade
+     * cantitatea livrata din inventory (produsul, la depozitul de plecare al
+     * rutei) si marcheaza expedierea ca stoc_scazut. Idempotent.
+     */
+    private function sincronizeazaStoc($id)
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT Status_expediere, stoc_scazut, LinieID, RutaID
+             FROM expedieri WHERE ExpediereID = :id'
+        );
+        $stmt->execute(['id' => $id]);
+        $e = $stmt->fetch();
+
+        // Se scade doar la livrare, o singura data, si doar daca stim linia comenzii.
+        if ($e === false
+            || $e['Status_expediere'] !== 'Livrat'
+            || (int) $e['stoc_scazut'] === 1
+            || $e['LinieID'] === null) {
+            return;
+        }
+
+        // Produsul + cantitatea livrata, si depozitul de plecare (origine ruta).
+        $l = $this->pdo->prepare('SELECT Product_ID, Cantitate FROM comenzi_produse WHERE LinieID = :lid');
+        $l->execute(['lid' => $e['LinieID']]);
+        $linie = $l->fetch();
+
+        $r = $this->pdo->prepare('SELECT Oras_origine FROM rute WHERE RutaID = :rid');
+        $r->execute(['rid' => $e['RutaID']]);
+        $orasDepozit = $r->fetchColumn();
+        $depozit = self::DEPOZIT_COD[$orasDepozit] ?? null;
+
+        $tranzactieProprie = !$this->pdo->inTransaction();
+        if ($tranzactieProprie) {
+            $this->pdo->beginTransaction();
+        }
+
+        try {
+            if ($linie !== false && $depozit !== null) {
+                // Cel mai recent rand de stoc al produsului, la acel depozit.
+                $inv = $this->pdo->prepare(
+                    'SELECT InventoryID FROM inventory
+                     WHERE Product_ID = :pid AND depozit = :dep
+                     ORDER BY `Date` DESC LIMIT 1'
+                );
+                $inv->execute(['pid' => $linie['Product_ID'], 'dep' => $depozit]);
+                $inventoryId = $inv->fetchColumn();
+
+                if ($inventoryId !== false) {
+                    $this->pdo->prepare(
+                        'UPDATE inventory
+                         SET Stock_Level = GREATEST(0, Stock_Level - :qty)
+                         WHERE InventoryID = :id'
+                    )->execute(['qty' => (int) $linie['Cantitate'], 'id' => $inventoryId]);
+                }
+            }
+
+            // Marcheaza chiar daca n-am gasit rand de stoc, ca sa nu reincercam.
+            $this->pdo->prepare('UPDATE expedieri SET stoc_scazut = 1 WHERE ExpediereID = :id')
+                ->execute(['id' => $id]);
+
+            if ($tranzactieProprie) {
+                $this->pdo->commit();
+            }
+        } catch (Throwable $ex) {
+            if ($tranzactieProprie && $this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+        }
     }
 
     /**

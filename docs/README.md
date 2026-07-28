@@ -10,8 +10,9 @@ un portal de urmarire pentru client.
   pentru date. Formularele fac POST clasic + redirect (Post-Redirect-Get).
 - **Baza de date:** MySQL/MariaDB (`sameday_company`).
 - **Server local:** XAMPP (Apache + MySQL), root web `C:\xampp\htdocs\CLAUDE\PRIMUL`.
-- **Exceptie API (autorizata in scris):** vremea se ia din API-ul public ANM
-  (`meteoromania.ro`), consumat server-side de PHP - vezi optimizarea de rute.
+- **Exceptii API (autorizate in scris), consumate server-side de PHP:** vremea din
+  API-ul ANM (`meteoromania.ro`) si pretul carburantului din `pretcarburant.ro`
+  (atribuire: Sursa: PretCarburant.ro) - vezi optimizarea de rute.
 
 ## Structura
 - `src/frontend/` - pagini PHP (HTML/CSS), inclusiv renderer-ul CRUD comun
@@ -31,8 +32,9 @@ un portal de urmarire pentru client.
   Distanta_km, **Durata_min** (timp prestabilit), **viteza** (km/h),
   **tip_strada** (autostrada/dn/drum judetean/drum comunal).
 - **inventory** - istoric lunar de stoc: Product_ID, Product_Name, Category,
-  Stock_Level, Reorder_Point, Monthly_Sales, Unit_Cost, Date, **poze**,
-  **depozit** (1=Arad, 2=Braila, 3=Pitesti).
+  Stock_Level, Reorder_Point, Monthly_Sales, Unit_Cost (pretul unitar de vanzare,
+  afisat in magazin), **Cost_Unitar** (costul de achizitie, optional), Date,
+  **poze**, **depozit** (1=Arad, 2=Braila, 3=Pitesti).
 - **comenzi** - ComandaID, ClientID, Data_comanda (datetime), Status, Total,
   Observatii.
 - **comenzi_produse** - liniile comenzii: LinieID, ComandaID, Product_ID,
@@ -40,7 +42,8 @@ un portal de urmarire pentru client.
 - **expedieri** - ExpediereID, **awb** (unic), ClientID, SoferID, RutaID,
   **LinieID** (linia de comanda expediata), Data_expediere (datetime),
   Data_livrare_estimata (datetime), Data_livrare_efectiva (datetime),
-  Status_expediere, Valoare_expediere.
+  Status_expediere, Valoare_expediere, **cost_carburant** (costul de motorina al
+  rutei, lei).
 
 Depozitele firmei sunt 3 orase: **Arad, Braila, Pitesti**. Fiecare oras de client
 are rute din toate cele 3 depozite.
@@ -53,27 +56,52 @@ are rute din toate cele 3 depozite.
   **produse** (inventory), **comenzi**, **expedieri**.
   - Produse: upload poza + selector de depozit (locatie).
   - Rute: distanta, viteza, tip drum, timp de condus.
+  - Comenzi: coloana **Produse** (cantitate x nume) si **Expediat** (cate linii din
+    comanda au deja expediere); cautarea merge si dupa produs.
 - `expediere_comanda.php` - **optimizare rute**: pentru o comanda, arata cele mai
   bune 3 rute per produs (ordonate dupa timp), operatorul alege una si se creeaza
   expedierea + AWB. Vezi `algoritm_optimizare_rute.md`.
 
 ### Client
-- `magazin.php` + `cos.php` - catalog pe categorii, cos, plasare comanda.
-- `portal_client.php` - **Login clienti**: clientul isi alege numele, introduce
+- `login.php` - **login client**: pentru a cumpara, clientul se logheaza alegandu-si
+  numele din lista (fara parola, doar clientii existenti). Magazinul si cosul cer
+  autentificare; checkout-ul foloseste clientul logat.
+- `magazin.php` + `cos.php` - catalog pe categorii, cos, plasare comanda (necesita login).
+  Cosul e legat de clientul logat (`$_SESSION['cosuri'][ClientID]`), deci doi clienti
+  care se logheaza pe acelasi browser nu isi vad cosul unul altuia.
+- `portal_client.php` - **urmarire colet**: clientul isi alege numele, introduce
   AWB-ul si vede statusul coletului (produs, km, timp, timp trecut in program,
-  timp ramas estimat). Buton in bara de navigare langa Produse/Cos.
+  timp ramas estimat).
 
 ## Reguli de afisare
 - Datele se afiseaza in **format european**: `DD.MM.YYYY` si `DD.MM.YYYY HH:MM`.
 - Programul curierilor: **07:00-22:00**, toate zilele (inclusiv weekend). Timpii
   scursi/ramasi si data livrarii estimate se calculeaza doar in acest interval.
 
+## Cost carburant pe ruta
+Costul de motorina al fiecarei rute se calculeaza si se salveaza in expediere
+(`cost_carburant`) la crearea ei din optimizare:
+`cost = distanta_km / 100 x consum x pret_motorina`, unde consumul mediu al dubei e
+**12 l/100 km** (`OptimizareRuteService::CONSUM_L_100KM`) si pretul motorinei
+standard vine din API-ul `pretcarburant.ro` (`CarburantService`, cache 6 h,
+fallback la un pret implicit). Costul per ruta se vede si in back office la alegerea
+rutei. Atribuire: "Sursa: PretCarburant.ro (https://pretcarburant.ro)".
+
+## Stoc la livrare
+Cand o expediere devine **"Livrat"**, cantitatea livrata se scade automat din
+`inventory` (produsul, la depozitul de plecare al rutei). Scaderea se face o
+singura data (flag `expedieri.stoc_scazut`), la salvarea expedierii cu statusul
+Livrat din back office (`expedieri.php`).
+
 ## Migrari (istoric schema)
 Orice schimbare de schema trece printr-un fisier numerotat in `src/database/`:
 `001`-`004` (fix-uri + comenzi), `005` Durata_min, `006` viteza, `007` tip_strada,
 `008` awb + LinieID, `009` creata_la (inlocuita ulterior), `010` reset comenzi/
-expedieri + date DATETIME. `seed_rute.sql` populeaza cele 18 rute (km din
-`distanta_orase.xlsx`, timp din `timp_orase.xlsx`).
+expedieri + date DATETIME, `011` stoc_scazut, `012`-`013` Cost_Unitar la produse,
+`014` cost_carburant la expedieri. `seed_rute.sql` populeaza cele 18 rute (km din
+`distanta_orase.xlsx`, timp din `timp_orase.xlsx`); `seed_comenzi_test.sql` adauga
+10 comenzi de test (clienti si produse diferite) - se poate rula de mai multe ori,
+dar de fiecare data adauga alt set de comenzi.
 
 ## Cum rulezi local
 1. Porneste XAMPP (Apache + MySQL).

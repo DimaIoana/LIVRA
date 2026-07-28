@@ -2,6 +2,9 @@
 
 require __DIR__ . '/_shop.php';
 
+// Trebuie sa fii logat ca sa cumperi.
+cere_login();
+
 $page = 'magazin.php';
 
 // --- Filtre din URL ---
@@ -58,12 +61,15 @@ $flash = shop_flash_get();
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="magazin.php">PRIMUL</a>
     <span class="header__subtitle">Magazin online</span>
     <nav class="nav">
       <a class="nav__link nav__link--active" href="magazin.php">Produse</a>
       <a class="nav__link" href="cos.php">Cos<?= cos_bucati() ? ' (' . (int) cos_bucati() . ')' : '' ?></a>
-      <a class="nav__link" href="portal_client.php">Login clienti</a>
+      <a class="nav__link" href="portal_client.php">Urmarire colet</a>
+      <?php $cl = client_logat(); ?>
+      <span class="nav__link" style="color:var(--text-muted)">Salut, <?= h($cl['nume']) ?></span>
+      <a class="nav__link" href="login.php?logout=1">Iesire</a>
     </nav>
   </div>
 </header>

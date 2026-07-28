@@ -91,12 +91,12 @@ $sectiuni = [
         </div>
 
         <div class="cta">
-            <a class="btn cta__btn" href="src/frontend/magazin.php">Deschide magazinul online &rarr;</a>
-            <span class="cta__text">Catalog pe categorii, cos de cumparaturi si plasare de comenzi pentru clienti.</span>
+            <a class="btn cta__btn" href="src/frontend/login.php">Login client &rarr;</a>
+            <span class="cta__text">Clientul se logheaza (isi alege numele) ca sa cumpere din magazin.</span>
         </div>
 
         <div class="cta">
-            <a class="btn cta__btn" href="src/frontend/portal_client.php">Login clienti &rarr;</a>
+            <a class="btn cta__btn" href="src/frontend/portal_client.php">Urmarire colet &rarr;</a>
             <span class="cta__text">Clientul isi alege numele si urmareste coletul dupa AWB: produs, distanta, timp si cat timp a trecut.</span>
         </div>
 

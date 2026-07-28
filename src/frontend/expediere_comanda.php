@@ -18,6 +18,8 @@ require __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/OptimizareRuteService.php';
 
 $service = new OptimizareRuteService($pdo);
+$carburant = new CarburantService();
+$pretMotorina = $carburant->pretMotorina();
 
 /** Scapa text pentru HTML. */
 function h($value)
@@ -240,7 +242,7 @@ $navLinks = [
         <?php else: ?>
           <table class="table" style="margin-top:8px">
             <thead>
-              <tr><th>Loc</th><th>Depozit → client</th><th>Timp ajustat</th><th>De ce</th><th></th></tr>
+              <tr><th>Loc</th><th>Depozit → client</th><th>Timp ajustat</th><th class="cell--number">Carburant</th><th>De ce</th><th></th></tr>
             </thead>
             <tbody>
               <?php foreach ($rute as $i => $r): ?>
@@ -254,6 +256,7 @@ $navLinks = [
                   </td>
                   <td><?= h($r['Oras_origine']) ?> → <?= h($r['Oras_destinatie']) ?></td>
                   <td class="cell--nowrap"><strong><?= h(timp_fmt($r['timp_ajustat'])) ?></strong></td>
+                  <td class="cell--number"><?= h(lei($r['cost_carburant'])) ?></td>
                   <td class="field__hint" style="max-width:360px">
                     <?= h($r['explicatie']) ?>
                     <?php if ($i > 0): ?>
@@ -282,6 +285,12 @@ $navLinks = [
     <?php if (!$linii): ?>
       <div class="card"><p class="empty">Comanda nu are produse.</p></div>
     <?php endif; ?>
+
+    <p class="subsol" style="margin-top:20px">
+      Cost carburant estimat la <?= h(number_format($pretMotorina, 2, ',', '.')) ?> lei/l motorina,
+      consum <?= h(OptimizareRuteService::CONSUM_L_100KM) ?> l/100 km.
+      <?= h(CarburantService::ATRIBUIRE) ?>.
+    </p>
 
   <?php endif; ?>
 

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/MeteoService.php';
+require_once __DIR__ . '/CarburantService.php';
 
 /**
  * Algoritm de optimizare a rutelor la expedierea unei comenzi.
@@ -20,13 +21,26 @@ class OptimizareRuteService
     const PROGRAM_START = 7;   // 07:00
     const PROGRAM_END = 22;    // 22:00
 
+    /** Consumul mediu al dubei de curier (motorina), in litri la 100 km. */
+    const CONSUM_L_100KM = 12;
+
     private $pdo;
     private $meteo;
+    private $carburant;
 
-    public function __construct(PDO $pdo, MeteoService $meteo = null)
+    public function __construct(PDO $pdo, MeteoService $meteo = null, CarburantService $carburant = null)
     {
         $this->pdo = $pdo;
         $this->meteo = $meteo !== null ? $meteo : new MeteoService();
+        $this->carburant = $carburant !== null ? $carburant : new CarburantService();
+    }
+
+    /** Costul de carburant al unei rute (lei) = km/100 x consum x pret motorina. */
+    public function costCarburant($km)
+    {
+        $litri = ((float) $km / 100) * self::CONSUM_L_100KM;
+
+        return round($litri * $this->carburant->pretMotorina(), 2);
     }
 
     /**
@@ -159,6 +173,7 @@ class OptimizareRuteService
         $ruta['ajustare_vreme'] = $vreme['ajustare'];
         $ruta['vreme_text'] = $vreme['text'];
         $ruta['timp_ajustat'] = (int) $ruta['Durata_min'] + $av + $at + $vreme['ajustare'];
+        $ruta['cost_carburant'] = $this->costCarburant((int) $ruta['Distanta_km']);
         $ruta['explicatie'] = $this->explica($ruta);
 
         return $ruta;
@@ -240,8 +255,8 @@ class OptimizareRuteService
             $ins = $this->pdo->prepare(
                 'INSERT INTO expedieri
                     (ClientID, SoferID, RutaID, LinieID, Data_expediere,
-                     Data_livrare_estimata, Status_expediere, Valoare_expediere)
-                 VALUES (:client, :sofer, :ruta, :linie, :dexp, :dest, :status, :val)'
+                     Data_livrare_estimata, Status_expediere, Valoare_expediere, cost_carburant)
+                 VALUES (:client, :sofer, :ruta, :linie, :dexp, :dest, :status, :val, :carb)'
             );
             $ins->execute([
                 'client' => $linie['ClientID'],
@@ -252,6 +267,7 @@ class OptimizareRuteService
                 'dest' => $dataEstimata,
                 'status' => 'In tranzit',
                 'val' => $linie['Subtotal'],
+                'carb' => $ruta['cost_carburant'],
             ]);
 
             $expediereId = (int) $this->pdo->lastInsertId();

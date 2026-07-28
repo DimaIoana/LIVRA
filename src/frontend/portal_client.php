@@ -171,12 +171,12 @@ if ($client === null) {
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="magazin.php">PRIMUL</a>
     <span class="header__subtitle">Portal client - urmarire colet</span>
     <nav class="nav">
       <a class="nav__link" href="magazin.php">Produse</a>
       <a class="nav__link" href="cos.php">Cos</a>
-      <a class="nav__link nav__link--active" href="portal_client.php">Login clienti</a>
+      <a class="nav__link nav__link--active" href="portal_client.php">Urmarire colet</a>
     </nav>
   </div>
 </header>

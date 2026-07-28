@@ -22,12 +22,12 @@ class InventoryRepository extends BaseRepository
 
     protected function columns()
     {
-        return ['Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Date', 'poze', 'depozit'];
+        return ['Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Cost_Unitar', 'Date', 'poze', 'depozit'];
     }
 
     protected function sortableColumns()
     {
-        return ['InventoryID', 'Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Date'];
+        return ['InventoryID', 'Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Cost_Unitar', 'Date'];
     }
 
     protected function searchableColumns()
@@ -46,7 +46,10 @@ class InventoryRepository extends BaseRepository
         $stock_level = $this->validInt($errors, $input, 'Stock_Level', 'Stocul', 0);
         $reorder_point = $this->validInt($errors, $input, 'Reorder_Point', 'Pragul de recomanda', 0);
         $monthly_sales = $this->validInt($errors, $input, 'Monthly_Sales', 'Vanzarile lunare', 0);
-        $unit_cost = $this->validDecimal($errors, $input, 'Unit_Cost', 'Costul unitar', 0);
+        // Unit_Cost = pretul unitar afisat clientului; Cost_Unitar = costul de
+        // achizitie pe firma (optional, se poate completa mai tarziu).
+        $unit_cost = $this->validDecimal($errors, $input, 'Unit_Cost', 'Pretul unitar', 0);
+        $cost_unitar = $this->validDecimal($errors, $input, 'Cost_Unitar', 'Costul unitar', 0, false);
 
         $date = trim((string) ($input['Date'] ?? ''));
         if ($date === '') {
@@ -81,6 +84,7 @@ class InventoryRepository extends BaseRepository
                 'Reorder_Point' => $reorder_point,
                 'Monthly_Sales' => $monthly_sales,
                 'Unit_Cost' => $unit_cost,
+                'Cost_Unitar' => $cost_unitar,
                 'Date' => $date,
                 'poze' => $poze === '' ? null : $poze,
                 'depozit' => $depozit,

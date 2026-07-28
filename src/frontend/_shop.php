@@ -4,13 +4,19 @@
  * Bootstrap comun pentru paginile de magazin (magazin.php, cos.php):
  * sesiune, conexiune, repository si helperi pentru cosul din sesiune.
  *
- * Cosul traieste in $_SESSION['cos'] ca harta Product_ID => cantitate.
+ * Cosul traieste in $_SESSION['cosuri'][ClientID] ca harta Product_ID => cantitate,
+ * deci fiecare client are cosul lui chiar daca se logheaza mai multi pe acelasi
+ * browser. Fara client logat nu exista cos.
  * Tot fluxul e server-rendered: formulare POST + redirect, fara API/JS.
  */
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+// Cosul vechi era comun pe sesiune (vizibil la orice client care se loga dupa).
+// Il stergem la prima incarcare, ca sesiunile deja deschise sa nu ramana cu el.
+unset($_SESSION['cos']);
 
 require_once __DIR__ . '/../database/db_connection.php';
 require_once __DIR__ . '/../backend/MagazinRepository.php';
@@ -47,15 +53,27 @@ function poza_url($stored)
     return '../../poze/' . rawurlencode($file);
 }
 
-/** Cosul curent: Product_ID => cantitate. */
+/** Cosul clientului logat: Product_ID => cantitate. Gol daca nu e nimeni logat. */
 function cos_get()
 {
-    return isset($_SESSION['cos']) && is_array($_SESSION['cos']) ? $_SESSION['cos'] : [];
+    $client = client_logat();
+    if (!$client) {
+        return [];
+    }
+
+    $cos = $_SESSION['cosuri'][$client['id']] ?? null;
+
+    return is_array($cos) ? $cos : [];
 }
 
 function cos_set(array $cos)
 {
-    $_SESSION['cos'] = $cos;
+    $client = client_logat();
+    if (!$client) {
+        return;
+    }
+
+    $_SESSION['cosuri'][$client['id']] = $cos;
 }
 
 /** Numarul total de bucati din cos (pentru indicatorul din antet). */
@@ -105,7 +123,10 @@ function cos_scoate($code)
 
 function cos_goleste()
 {
-    unset($_SESSION['cos']);
+    $client = client_logat();
+    if ($client) {
+        unset($_SESSION['cosuri'][$client['id']]);
+    }
 }
 
 /** Pune un mesaj care va fi aratat dupa redirect. */
@@ -120,4 +141,39 @@ function shop_flash_get()
     unset($_SESSION['shop_flash']);
 
     return $flash;
+}
+
+// --- Autentificare client (login usor: alege numele din lista, fara parola) ---
+
+/** Clientul logat (id + nume) sau null daca nu e nimeni logat. */
+function client_logat()
+{
+    if (isset($_SESSION['client_id'])) {
+        return ['id' => (int) $_SESSION['client_id'], 'nume' => $_SESSION['client_nume'] ?? ''];
+    }
+
+    return null;
+}
+
+function client_login($id, $nume)
+{
+    // ID nou de sesiune la fiecare login (protectie session fixation).
+    session_regenerate_id(true);
+
+    $_SESSION['client_id'] = (int) $id;
+    $_SESSION['client_nume'] = $nume;
+}
+
+function client_logout()
+{
+    unset($_SESSION['client_id'], $_SESSION['client_nume']);
+}
+
+/** Cere autentificare: daca nu e niciun client logat, trimite la login. */
+function cere_login()
+{
+    if (!client_logat()) {
+        header('Location: login.php');
+        exit;
+    }
 }

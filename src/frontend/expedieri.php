@@ -46,6 +46,7 @@ $config = [
             },
         ],
         ['key' => 'Valoare_expediere', 'label' => 'Valoare', 'type' => 'money'],
+        ['key' => 'cost_carburant', 'label' => 'Carburant', 'type' => 'money'],
     ],
 
     'fields' => [

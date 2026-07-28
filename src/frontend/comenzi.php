@@ -10,7 +10,7 @@ $config = [
     'title' => 'Gestionare comenzi',
     'entityLabel' => 'comanda',
     'addLabel' => 'Comanda noua',
-    'searchPlaceholder' => 'Cauta dupa client, status sau observatii...',
+    'searchPlaceholder' => 'Cauta dupa client, produs, status sau observatii...',
     'pk' => 'ComandaID',
     'defaultSort' => ['column' => 'ComandaID', 'dir' => 'desc'],
     'deleteBlockedMessage' => null,
@@ -50,7 +50,54 @@ $config = [
                 return 'tag--warn';
             },
         ],
-        ['key' => 'Total', 'label' => 'Total', 'type' => 'money'],
+        [
+            'key' => 'Produse',
+            'label' => 'Produse',
+            'format' => function ($row) {
+                return $row['Produse'] === null ? 'Fara linii de produs' : $row['Produse'];
+            },
+        ],
+        [
+            'key' => 'Total',
+            'label' => 'Total',
+            'type' => 'money',
+            // Totalul comenzii ar trebui sa fie suma liniilor; daca a fost scris
+            // manual altfel, se evidentiaza ca sa se vada la verificare.
+            'cellClass' => function ($row) {
+                return (int) $row['NrLinii'] > 0 && abs((float) $row['Total'] - (float) $row['TotalLinii']) >= 0.01
+                    ? 'cell--alert'
+                    : '';
+            },
+        ],
+        [
+            'key' => 'NrExpediate',
+            'label' => 'Expediat',
+            'type' => 'tag',
+            'format' => function ($row) {
+                $linii = (int) $row['NrLinii'];
+                $expediate = (int) $row['NrExpediate'];
+
+                if ($linii === 0) {
+                    return '-';
+                }
+
+                if ($expediate === 0) {
+                    return 'Neexpediata';
+                }
+
+                return $expediate >= $linii ? 'Complet' : $expediate . ' din ' . $linii . ' linii';
+            },
+            'tagClass' => function ($row) {
+                $linii = (int) $row['NrLinii'];
+                $expediate = (int) $row['NrExpediate'];
+
+                if ($linii === 0 || $expediate === 0) {
+                    return '';
+                }
+
+                return $expediate >= $linii ? 'tag--ok' : 'tag--warn';
+            },
+        ],
         ['key' => 'Observatii', 'label' => 'Observatii'],
     ],
 
