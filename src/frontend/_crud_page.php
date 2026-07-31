@@ -349,6 +349,7 @@ $navLinks = [
     'soferi' => ['soferi.php', 'Soferi'],
     'rute' => ['rute.php', 'Rute'],
     'produse' => ['produse.php', 'Produse'],
+    'business' => ['business.php', 'Business'],
 ];
 
 // Formularul are nevoie de enctype multipart doar daca exista un camp de fisier.

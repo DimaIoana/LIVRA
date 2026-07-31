@@ -57,6 +57,13 @@ $sectiuni = [
                AND i.Stock_Level <= i.Reorder_Point'
         )->fetchColumn() . ' sub prag',
     ],
+    [
+        'titlu' => 'Business dashboard',
+        'descriere' => 'Rapoarte: vanzari pe zi, cheltuieli pe zi si comenzi pe oras.',
+        'link' => 'src/frontend/business.php',
+        'total' => 3,
+        'unitate' => 'rapoarte',
+    ],
 ];
 ?>
 <!DOCTYPE html>

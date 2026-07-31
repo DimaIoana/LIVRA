@@ -1,0 +1,879 @@
+/* Business dashboard: grafice desenate din HTML + CSS, fara JS.
+   Barele isi iau inaltimea dintr-un `style="height: X%"` calculat in PHP, iar
+   tortul dintr-un `conic-gradient` construit tot in PHP. */
+
+:root {
+  /* Paleta categorica. Aceleasi valori, in aceeasi ordine, ca `PALETA` din
+     business.php - ordinea tine culorile vecine distincte si pentru cine vede
+     altfel culorile, deci nu se amesteca. */
+  --s1: #2a78d6;  /* albastru - vanzari / produse */
+  --s2: #eb6834;  /* portocaliu - carburant */
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #4a3aa7;
+  --s6: #e87ba4;
+
+  --chart-grid: var(--border);
+  --chart-baseline: #c6cede;
+}
+
+/* --- Titlul paginii --- */
+
+.dash__title {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: -0.4px;
+}
+
+.dash__lead {
+  margin: 6px 0 20px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* --- Cifrele de sus --- */
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.kpi__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.kpi__value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+/* Semnul profitului: singurul loc unde culoarea textului poarta un inteles. */
+.kpi__value--plus {
+  color: var(--ok);
+}
+
+.kpi__value--minus,
+.cell--minus {
+  color: var(--fail);
+}
+
+/* --- Cardul unui raport --- */
+
+/* Doua rapoarte pe rand, fiecare pe jumatate de pagina. `minmax(0, 1fr)` tine
+   coloanele egale chiar daca un grafic ar vrea sa fie mai lat decat jumatate. */
+.dash__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+/* `.card` taie ce iese din el; aici tooltipurile stau deasupra barelor. */
+.dash__card {
+  overflow: visible;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Un raport care are nevoie de toata latimea (trei coloane de bare). */
+.dash__card--lat {
+  grid-column: 1 / -1;
+}
+
+.dash__head {
+  padding: 18px 20px 12px;
+}
+
+/* --- Grafic cu bare verticale --- */
+
+.chart {
+  display: grid;
+  grid-template-columns: 66px 1fr;
+  grid-template-rows: 240px auto;
+  padding: 26px 20px 6px;
+}
+
+/* Gradatiile sunt pozitionate absolut, ca sa cada exact pe liniile din fundal. */
+.chart__yaxis {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.chart__tick {
+  position: absolute;
+  right: 12px;
+  transform: translateY(50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Liniile orizontale, plus linia de sus si linia de baza. Distanta dintre ele
+   (`--pas`) e 25% implicit; graficul cu linii o schimba dupa cate gradatii are. */
+.chart__plot {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  border-top: 1px solid var(--chart-grid);
+  border-bottom: 1px solid var(--chart-baseline);
+  background-image: repeating-linear-gradient(to top, var(--chart-grid) 0 1px, transparent 1px var(--pas, 25%));
+}
+
+.chart__cols {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 100%;
+}
+
+.chart__col {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;          /* spatiul alb dintre doua bare alaturate */
+  flex: 1;
+  height: 100%;
+}
+
+.chart__bar {
+  position: relative;
+  width: 100%;
+  max-width: 24px;
+  border-radius: 4px 4px 0 0;   /* rotunjit sus, drept pe linia de baza */
+}
+
+/* O valoare mica tot trebuie sa se vada; zero ramane fara bara. */
+.chart__bar--minim {
+  min-height: 3px;
+}
+
+.chart__bar--s1 {
+  background: var(--s1);
+}
+
+.chart__bar--s2 {
+  background: var(--s2);
+}
+
+.chart__value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Tooltip pe hover, fara JS. */
+.chart__tip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  margin-bottom: 24px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.chart__bar:hover .chart__tip {
+  opacity: 1;
+}
+
+.chart__bar:hover {
+  filter: brightness(1.08);
+}
+
+.chart__xaxis {
+  display: flex;
+  gap: 10px;
+  grid-column: 2;
+  grid-row: 2;
+  padding-top: 8px;
+}
+
+.chart__xlabel {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Grafic cu linii --- */
+
+/* SVG-ul se intinde peste toata zona de desen; `non-scaling-stroke` tine
+   grosimea liniilor la 2px, oricat de lat ar fi graficul. */
+.linie {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.linie__zero {
+  stroke: var(--chart-baseline);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.linie__serie {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.linie__serie--s1 {
+  stroke: var(--s1);
+}
+
+.linie__serie--s2 {
+  stroke: var(--s2);
+}
+
+.linie__serie--s3 {
+  stroke: var(--s3);
+}
+
+.linie__puncte {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Inelul alb de 2px tine punctul lizibil acolo unde doua serii se intersecteaza. */
+.linie__punct {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.linie__punct--s1 {
+  background: var(--s1);
+}
+
+.linie__punct--s2 {
+  background: var(--s2);
+}
+
+.linie__punct--s3 {
+  background: var(--s3);
+}
+
+/* Benzile de hover: fiecare zi are banda ei, cu reper vertical si tooltip. */
+.crosshair {
+  position: absolute;
+  inset: 0;
+}
+
+.crosshair__banda {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.crosshair__linie {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--chart-baseline);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.crosshair__banda:hover .crosshair__linie,
+.crosshair__banda:hover .chart__tip {
+  opacity: 1;
+}
+
+/* Tooltip pe mai multe randuri: la trei serii, un singur rand ar fi prea lat. */
+.chart__tip--bloc {
+  top: 8px;
+  bottom: auto;
+  display: grid;
+  gap: 2px;
+  margin-bottom: 0;
+  text-align: left;
+  line-height: 1.35;
+}
+
+.chart__xaxis--puncte {
+  display: block;
+  position: relative;
+  height: 30px;
+}
+
+/* Etichetele cad sub punctele lor, nu la mijlocul unei coloane. */
+.chart__xlabel--punct {
+  position: absolute;
+  top: 8px;
+  transform: translateX(-50%);
+}
+
+/* --- Legenda seriilor --- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding: 0 20px;
+}
+
+.legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.swatch--s1 {
+  background: var(--s1);
+}
+
+.swatch--s2 {
+  background: var(--s2);
+}
+
+.swatch--s3 {
+  background: var(--s3);
+}
+
+/* Totalul seriei, langa numele ei in legenda. */
+.legend__total {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Grafic tort --- */
+
+.pie {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 40px;
+  padding: 10px 20px 20px;
+}
+
+.pie__chart {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Numarul de comenzi, scris in mijlocul feliei; culoarea vine din PHP, aleasa
+   dupa cat de inchisa e felia. */
+.pie__label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pie__legend {
+  display: grid;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 460px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.pie__oras {
+  font-weight: 600;
+}
+
+.pie__cifra {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Clasament cu bare orizontale (activitatea soferilor) --- */
+
+/* O singura grila pentru tot panoul: numele soferului, apoi cate o pereche
+   (bara, cifra) pentru fiecare masura. Randurile sunt `display: contents`, deci
+   celulele lor intra direct in grila si toate barele unei masuri pornesc si se
+   termina pe aceleasi coloane - altfel o cifra mai lunga ar scurta bara de
+   langa ea si lungimile n-ar mai fi comparabile intre randuri. */
+.rank {
+  display: grid;
+  grid-template-columns: max-content repeat(3, minmax(60px, 1fr) max-content);
+  align-items: center;
+  gap: 11px 14px;
+  padding: 4px 20px 16px;
+}
+
+.rank__head,
+.rank__row,
+.rank__cell {
+  display: contents;
+}
+
+/* Titlul unei masuri sta peste perechea ei de coloane. */
+.rank__col {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  grid-column: span 2;
+  padding-bottom: 2px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rank__nume {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Sina pe care sta bara: arata cat de departe e maximul coloanei. */
+.rank__track {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--chart-grid);
+}
+
+.rank__bar {
+  position: relative;
+  height: 100%;
+  border-radius: 0 4px 4px 0;   /* rotunjit la capatul cu datele, drept la origine */
+}
+
+/* Un sofer cu foarte putini km tot trebuie sa se vada; zero ramane fara bara. */
+.rank__bar--minim {
+  min-width: 3px;
+}
+
+.rank__bar--s1 {
+  background: var(--s1);
+}
+
+.rank__bar--s2 {
+  background: var(--s2);
+}
+
+.rank__bar--s3 {
+  background: var(--s3);
+}
+
+.rank__bar:hover {
+  filter: brightness(1.08);
+}
+
+/* Tooltipul urca deasupra barei si se aliniaza la originea ei: o bara scurta e
+   lipita de marginea stanga, deci unul centrat ar iesi din card. */
+.rank__bar .chart__tip {
+  left: 0;
+  margin-bottom: 8px;
+  transform: none;
+}
+
+.rank__bar:hover .chart__tip {
+  opacity: 1;
+}
+
+/* Cifrele au coloana lor in grila, deci se pot alinia la dreapta fara sa scurteze
+   barele: capetele barelor raman pe aceeasi verticala in tot clasamentul. */
+.rank__value {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Varianta cu o singura masura (utilizarea traseelor): nume, bara, cifra. */
+.rank--singur {
+  grid-template-columns: max-content minmax(60px, 1fr) max-content;
+  gap: 9px 14px;
+}
+
+/* Numele traseului isi poarta si eticheta de extrema, in aceeasi celula. */
+.rank__nume--traseu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Eticheta care spune care e cel mai folosit si care e cel mai putin folosit.
+   Extremele nu se despart prin culoarea barei: culoarea ar ajunge sa poarte
+   rangul, care se schimba la fiecare cursa noua, si s-ar pierde alb-negru. */
+.chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip--max {
+  background: var(--s1);
+  color: #fff;
+}
+
+.chip--min {
+  background: var(--chart-grid);
+  color: var(--text-muted);
+}
+
+.rank__nota {
+  margin: 0;
+  padding: 0 20px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* --- Tabelul cu cifrele de sub grafic --- */
+
+.chart__data {
+  border-top: 1px solid var(--border);
+}
+
+.chart__summary {
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.chart__summary:hover {
+  color: var(--text);
+}
+
+.chart__data[open] .chart__summary {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Cardul lasa tooltipurile sa iasa, deci tabelul isi poarta singur bara de
+   derulare pe ecrane inguste. */
+.chart__data[open] {
+  overflow-x: auto;
+}
+
+/* Tabel afisat direct, fara `details` in jurul lui (cursele soferilor). */
+.chart__data--deschis {
+  overflow-x: auto;
+}
+
+/* Prima cursa a unui sofer: linia de deasupra desparte grupurile, fiindca
+   numele se scrie o singura data pe grup. */
+.row--grup td {
+  border-top: 1px solid var(--border);
+}
+
+.table tbody tr.row--grup:first-child td {
+  border-top: none;
+}
+
+/* --- Grafic radar (profitul pe sofer) --- */
+
+.radar__concluzie {
+  margin: 0;
+  padding: 0 20px 4px;
+  font-size: 14px;
+}
+
+.radar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 32px;
+  padding: 10px 20px 20px;
+}
+
+/* Panza e patrata si isi pastreaza forma; numele soferilor stau peste ea,
+   pozitionate in procente, ca sa nu se micsoreze odata cu SVG-ul. */
+.radar__panza {
+  position: relative;
+  width: 380px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.radar__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.radar__inel,
+.radar__zero {
+  fill: none;
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Inelul lui zero e reperul raportului, deci se vede mai apasat decat restul. */
+.radar__zero {
+  stroke: var(--chart-baseline);
+  stroke-width: 2;
+}
+
+.radar__spita {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.radar__serie {
+  fill: rgba(42, 120, 214, 0.14);   /* rezerva, daca `color-mix` nu e cunoscut */
+  fill: color-mix(in srgb, var(--s1) 14%, transparent);
+  stroke: var(--s1);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.radar__punct {
+  fill: var(--s1);
+  stroke: var(--surface);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Gradatiile scrise pe axa de sus, langa spita. */
+.radar__gradatie {
+  position: absolute;
+  left: 50%;
+  margin-left: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.radar__nume {
+  position: absolute;
+  display: block;
+  width: 130px;
+  margin: -18px 0 0 -65px;   /* centrat pe punctul din jurul panzei */
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.radar__cifra {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Clasamentul de langa panza: aceleasi cifre, in ordine, pentru cine vrea
+   raspunsul direct fara sa citeasca poligonul. */
+.radar__clasament {
+  display: grid;
+  gap: 8px;
+  flex: 1;
+  min-width: 280px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+
+.radar__loc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+
+.radar__loc--primul {
+  border-color: var(--s1);
+  background: var(--brand-soft);
+}
+
+.radar__rang {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.radar__loc--primul .radar__rang {
+  background: var(--s1);
+  color: #fff;
+}
+
+.radar__sofer {
+  display: flex;
+  flex-direction: column;
+  font-weight: 600;
+}
+
+.radar__baza {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.radar__profit {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cell--plus {
+  color: var(--ok);
+}
+
+/* --- Raportul Power BI incorporat --- */
+
+.pbi {
+  padding: 0 20px;
+}
+
+/* Raportul e o pagina intreaga in miniatura, deci are nevoie de inaltime:
+   70% din ecran, dar nu sub 520px pe monitoarele mici. */
+.pbi__frame {
+  display: block;
+  width: 100%;
+  height: 70vh;
+  min-height: 520px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.pbi__nota {
+  margin: 0;
+  padding: 12px 20px 18px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Sub aceasta latime jumatatea de pagina devine prea ingusta pentru un grafic,
+   deci rapoartele trec unul sub altul. */
+@media (max-width: 1100px) {
+  .dash__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .chart {
+    grid-template-columns: 52px 1fr;
+    grid-template-rows: 200px auto;
+  }
+
+  .chart__value {
+    display: none;   /* pe ecran mic nu mai incap; raman axa si tabelul */
+  }
+
+  .pie {
+    gap: 24px;
+  }
+
+  /* Trei coloane de bare nu incap pe telefon: fiecare sofer devine un bloc, cu
+     cele trei masuri una sub alta si cu numele masurii in fata barei. */
+  .rank {
+    display: block;
+    padding: 0 20px 8px;
+  }
+
+  .rank__head {
+    display: none;
+  }
+
+  .rank__row {
+    display: block;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .rank__cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 7px;
+  }
+
+  .rank__cell::before {
+    content: attr(data-eticheta);
+    flex: none;
+    width: 96px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .rank__track {
+    flex: 1;
+  }
+
+  .rank__value {
+    flex: none;
+    min-width: 68px;
+    text-align: right;
+  }
+}

@@ -61,6 +61,31 @@ are rute din toate cele 3 depozite.
 - `expediere_comanda.php` - **optimizare rute**: pentru o comanda, arata cele mai
   bune 3 rute per produs (ordonate dupa timp), operatorul alege una si se creeaza
   expedierea + AWB. Vezi `algoritm_optimizare_rute.md`.
+- `business.php` - **Business dashboard**: rapoarte cu grafice desenate din
+  HTML + CSS + SVG inline (fara JS), pe baza lui `BusinessRepository`. Primele
+  patru stau cate doua pe rand, restul pe toata latimea:
+  1. evolutia vanzarilor pe zi (bare verticale);
+  2. cheltuielile de produse si carburant pe zi (bare grupate, doua serii);
+  3. numarul de comenzi pe oras (grafic tort);
+  4. **Business financiar** - vanzari, cost si profit pe zi (grafic cu linii,
+     scara cuprinde si valorile negative);
+  5. activitatea soferilor (km, timp de condus, carburant - bare orizontale);
+  6. **cat de folosit e fiecare traseu** - cate curse au plecat pe fiecare traseu
+     (bare orizontale, ordonate descrescator); traseele nefolosite raman in lista,
+     cu bara goala, iar extremele sunt marcate cu eticheta scrisa, nu prin culoare;
+  7. **cursele soferilor** - tabel cu un rand pe expediere: soferul, traseul si
+     kilometrii traseului, grupat pe sofer si cronologic;
+  8. **cine a fost cel mai profitabil sofer** - grafic radar cu o axa pe sofer si
+     o serie (profitul adus pe traseele lui), cu clasament si tabel alaturi;
+  9. **raportul Power BI** publicat, incorporat la sfarsitul paginii.
+  Rapoartele de bani iau in calcul **numai expedierile livrate**, pe ziua livrarii
+  efective; costul produselor = cantitate x `Cost_Unitar` (depozitul de plecare);
+  profitul = vanzari - (cost produse + cost carburant). Zilele fara livrari apar
+  cu zero, ca axa de timp sa fie continua. Sub fiecare grafic se poate deschide
+  tabelul cu cifrele.
+  Adresa raportului Power BI sta in constantele `PBI_EMBED` / `PBI_LINK` din
+  `business.php`; asa cum e acum, cere vizitatorului cont Power BI cu drept pe
+  raport (vezi comentariul de acolo pentru varianta publica).
 
 ### Client
 - `login.php` - **login client**: pentru a cumpara, clientul se logheaza alegandu-si
@@ -98,7 +123,9 @@ Orice schimbare de schema trece printr-un fisier numerotat in `src/database/`:
 `001`-`004` (fix-uri + comenzi), `005` Durata_min, `006` viteza, `007` tip_strada,
 `008` awb + LinieID, `009` creata_la (inlocuita ulterior), `010` reset comenzi/
 expedieri + date DATETIME, `011` stoc_scazut, `012`-`013` Cost_Unitar la produse,
-`014` cost_carburant la expedieri. `seed_rute.sql` populeaza cele 18 rute (km din
+`014` cost_carburant la expedieri, `015` si `016` Cost_Unitar scazut cu 20% de
+doua ori (cumulat -36%), `017` Unit_Cost crescut cu 40% (date, nu schema -
+niciuna nu se ruleaza de doua ori). `seed_rute.sql` populeaza cele 18 rute (km din
 `distanta_orase.xlsx`, timp din `timp_orase.xlsx`); `seed_comenzi_test.sql` adauga
 10 comenzi de test (clienti si produse diferite) - se poate rula de mai multe ori,
 dar de fiecare data adauga alt set de comenzi.
