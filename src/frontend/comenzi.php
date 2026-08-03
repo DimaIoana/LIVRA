@@ -105,6 +105,27 @@ $config = [
                 return $expediate >= $linii ? 'tag--ok' : 'tag--warn';
             },
         ],
+        [
+            // De unde pleaca marfa. Pe comenzile deja expediate sunt depozitele
+            // reale, luate din rutele expedierilor; pe cele care n-au plecat inca
+            // sunt cele pe care le-ar alege algoritmul, deci o estimare - si scrie
+            // asta, ca sa nu se confunde cu un fapt.
+            'key' => 'Depozite',
+            'label' => 'Depozit plecare',
+            'format' => function ($row) use ($repo, $optimizare) {
+                if (!empty($row['Depozite'])) {
+                    return $row['Depozite'];
+                }
+
+                if ((int) $row['NrLinii'] === 0) {
+                    return '-';
+                }
+
+                $estimate = $repo->depoziteEstimate($row, $optimizare);
+
+                return $estimate ? implode(', ', $estimate) . ' (estimat)' : 'Fara stoc';
+            },
+        ],
         ['key' => 'Observatii', 'label' => 'Observatii'],
         ['key' => 'profit', 'label' => 'Profit', 'type' => 'modal', 'modal' => 'profit'],
     ],

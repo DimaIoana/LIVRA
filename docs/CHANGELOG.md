@@ -30,6 +30,21 @@ Jurnal cronologic al lucrului pe proiect. Cele mai recente sus.
   iesit din `business.php` in `_grafic_scara.php`, folosit acum de ambele pagini,
   in loc sa fie copiati. Adaugata clasa `.chart__bar--s3` (bara verde de profit).
 
+## 2026-08-03 - Coloana "Depozit plecare" la comenzi
+- Tabelul de comenzi arata de unde pleaca marfa fiecarei comenzi:
+  - pe comenzile **deja expediate**, depozitele **reale**, luate din rutele
+    expedierilor (`GROUP_CONCAT DISTINCT` pe `rute.Oras_origine`), ex.
+    "Braila, Pitesti" cand liniile au plecat din depozite diferite;
+  - pe cele care **n-au plecat inca**, depozitele pe care le-ar alege algoritmul,
+    marcate cu "(estimat)", ca sa nu se confunde cu un fapt;
+  - "Fara stoc" daca niciun depozit n-are produsele, "-" daca n-are linii.
+- Coloana e sortabila. Depozitele reale vin din acelasi SELECT ca restul listei,
+  deci nu costa nimic in plus; estimarea se calculeaza doar pentru comenzile
+  neexpediate.
+- `situatieFinanciara()` isi tine acum rezultatul intr-o memorie pe cerere:
+  aceeasi comanda era intrebata de trei ori pe pagina (eticheta butonului,
+  culoarea lui, coloana noua), iar calculul trece prin algoritmul de rute.
+
 ## 2026-08-03 - Semafor pe cutia Comenzi + coloana "Depozit" la produse
 - Cutia **Comenzi** din pagina principala arata trei becuri colorate, cu numarul
   fiecarei stari:

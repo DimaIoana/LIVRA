@@ -14,6 +14,9 @@ class ComandaRepository extends BaseRepository
 {
     const STATUSURI = ['Noua', 'In procesare', 'Trimisa', 'Anulata'];
 
+    /** Estimarile financiare deja calculate in cererea curenta, pe ComandaID. */
+    private $situatii = [];
+
     protected function table()
     {
         return 'comenzi';
@@ -31,7 +34,7 @@ class ComandaRepository extends BaseRepository
 
     protected function sortableColumns()
     {
-        return ['ComandaID', 'ClientNume', 'Data_comanda', 'Status', 'Total'];
+        return ['ComandaID', 'ClientNume', 'Data_comanda', 'Status', 'Total', 'Depozite'];
     }
 
     protected function searchableColumns()
@@ -58,7 +61,13 @@ class ComandaRepository extends BaseRepository
                          WHERE cp.ComandaID = c.ComandaID) AS TotalLinii,
                        (SELECT COUNT(*) FROM expedieri e
                            JOIN comenzi_produse cp ON cp.LinieID = e.LinieID
-                          WHERE cp.ComandaID = c.ComandaID) AS NrExpediate
+                          WHERE cp.ComandaID = c.ComandaID) AS NrExpediate,
+                       (SELECT GROUP_CONCAT(DISTINCT r.Oras_origine
+                                            ORDER BY r.Oras_origine SEPARATOR \', \')
+                          FROM expedieri e
+                          JOIN comenzi_produse cp ON cp.LinieID = e.LinieID
+                          JOIN rute r ON r.RutaID = e.RutaID
+                         WHERE cp.ComandaID = c.ComandaID) AS Depozite
                 FROM comenzi c
                 JOIN clienti cl ON cl.ClientID = c.ClientID';
     }
@@ -221,6 +230,14 @@ class ComandaRepository extends BaseRepository
      */
     public function situatieFinanciara(array $comanda, OptimizareRuteService $optimizare)
     {
+        // Aceeasi comanda e intrebata de mai multe ori pe aceeasi pagina (eticheta
+        // butonului, culoarea lui, coloana de depozite), iar calculul trece prin
+        // algoritmul de rute. Il facem o singura data pe cerere.
+        $cheie = (int) $comanda['ComandaID'];
+        if (isset($this->situatii[$cheie])) {
+            return $this->situatii[$cheie];
+        }
+
         $stmt = $this->pdo->prepare(
             'SELECT LinieID, Product_ID, Product_Name, Cantitate, Subtotal
              FROM comenzi_produse WHERE ComandaID = :id ORDER BY LinieID'
@@ -249,6 +266,7 @@ class ComandaRepository extends BaseRepository
                 'produs' => $l['Product_Name'],
                 'cantitate' => (int) $l['Cantitate'],
                 'subtotal' => (float) $l['Subtotal'],
+                'depozit' => $ruta === null ? null : $ruta['Oras_origine'],
                 'ruta' => $ruta === null ? null : $ruta['Oras_origine'] . ' → ' . $ruta['Oras_destinatie'],
                 'km' => $ruta === null ? 0 : (int) $ruta['Distanta_km'],
                 'marfa' => $costLinie,
@@ -259,7 +277,7 @@ class ComandaRepository extends BaseRepository
 
         $cost = $marfa + $carburant;
 
-        return [
+        $this->situatii[$cheie] = [
             'incasare' => $incasare,
             'marfa' => $marfa,
             'carburant' => $carburant,
@@ -267,6 +285,31 @@ class ComandaRepository extends BaseRepository
             'profit' => $incasare - $cost,
             'linii' => $linii,
         ];
+
+        return $this->situatii[$cheie];
+    }
+
+    /**
+     * Depozitele din care ar pleca o comanda care inca n-a fost expediata, in
+     * ordine alfabetica si fara repetitii. Sunt cele pe care le-ar alege
+     * algoritmul pentru produsele ei, deci o estimare, nu un fapt.
+     *
+     * @return string[] gol daca niciun produs n-are stoc nicaieri
+     */
+    public function depoziteEstimate(array $comanda, OptimizareRuteService $optimizare)
+    {
+        $depozite = [];
+
+        foreach ($this->situatieFinanciara($comanda, $optimizare)['linii'] as $linie) {
+            if ($linie['depozit'] !== null) {
+                $depozite[$linie['depozit']] = true;
+            }
+        }
+
+        $lista = array_keys($depozite);
+        sort($lista);
+
+        return $lista;
     }
 
     /**

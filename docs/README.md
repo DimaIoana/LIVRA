@@ -62,8 +62,10 @@ are rute din toate cele 3 depozite.
     criteriu, km / litri / cost carburant si clasamentul rutelor catre acelasi
     oras - deci de ce a ajuns coletul pe traseul acela
     (`_algoritm_ruta.php`, `OptimizareRuteService::explicaRuta()`).
-  - Comenzi: coloana **Produse** (cantitate x nume) si **Expediat** (cate linii din
-    comanda au deja expediere); cautarea merge si dupa produs.
+  - Comenzi: coloana **Produse** (cantitate x nume), **Expediat** (cate linii din
+    comanda au deja expediere) si **Depozit plecare** (depozitele reale pe
+    comenzile expediate, cele estimate de algoritm pe cele care n-au plecat inca);
+    cautarea merge si dupa produs.
 - `expediere_comanda.php` - **optimizare rute**: pentru o comanda, arata cele mai
   bune 3 rute per produs (ordonate dupa timp), operatorul alege una si se creeaza
   expedierea + AWB. Vezi `algoritm_optimizare_rute.md`.
