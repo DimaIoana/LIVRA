@@ -54,14 +54,20 @@ are rute din toate cele 3 depozite.
 - `index.php` - dashboard cu totaluri pe fiecare sectiune.
 - CRUD generic (prin `_crud_page.php`): **clienti**, **soferi**, **rute**,
   **produse** (inventory), **comenzi**, **expedieri**.
-  - Produse: upload poza + selector de depozit (locatie).
+  - Produse: upload poza + selector de depozit.
   - Rute: distanta, viteza, tip drum, timp de condus.
+  - Expedieri: coloana **Algoritm**, cu un buton "Explica" pe fiecare rand.
+    Deschide o fereastra cu contextul expedierii (AWB, sofer, date), verdictul
+    (ruta castigatoare sau locul N), descompunerea timpului ajustat criteriu cu
+    criteriu, km / litri / cost carburant si clasamentul rutelor catre acelasi
+    oras - deci de ce a ajuns coletul pe traseul acela
+    (`_algoritm_ruta.php`, `OptimizareRuteService::explicaRuta()`).
   - Comenzi: coloana **Produse** (cantitate x nume) si **Expediat** (cate linii din
     comanda au deja expediere); cautarea merge si dupa produs.
 - `expediere_comanda.php` - **optimizare rute**: pentru o comanda, arata cele mai
   bune 3 rute per produs (ordonate dupa timp), operatorul alege una si se creeaza
   expedierea + AWB. Vezi `algoritm_optimizare_rute.md`.
-- `business.php` - **Business dashboard**: rapoarte cu grafice desenate din
+- `business.php` - **Business Intelligence si analiza de date**: rapoarte cu grafice desenate din
   HTML + CSS + SVG inline (fara JS), pe baza lui `BusinessRepository`. Primele
   patru stau cate doua pe rand, restul pe toata latimea:
   1. evolutia vanzarilor pe zi (bare verticale);
@@ -123,12 +129,19 @@ Orice schimbare de schema trece printr-un fisier numerotat in `src/database/`:
 `001`-`004` (fix-uri + comenzi), `005` Durata_min, `006` viteza, `007` tip_strada,
 `008` awb + LinieID, `009` creata_la (inlocuita ulterior), `010` reset comenzi/
 expedieri + date DATETIME, `011` stoc_scazut, `012`-`013` Cost_Unitar la produse,
-`014` cost_carburant la expedieri, `015` si `016` Cost_Unitar scazut cu 20% de
-doua ori (cumulat -36%), `017` Unit_Cost crescut cu 40% (date, nu schema -
-niciuna nu se ruleaza de doua ori). `seed_rute.sql` populeaza cele 18 rute (km din
-`distanta_orase.xlsx`, timp din `timp_orase.xlsx`); `seed_comenzi_test.sql` adauga
-10 comenzi de test (clienti si produse diferite) - se poate rula de mai multe ori,
-dar de fiecare data adauga alt set de comenzi.
+`014` cost_carburant la expedieri, `022` statusul "Anulat" la expedieri,
+`023` tabela `comenzi_financiar` (decizia de trimitere) si stergerea lui
+`expedieri_financiar`.
+
+Fisiere de **date**, nu de schema, care nu se ruleaza de doua ori: `015` si `016`
+Cost_Unitar scazut cu 20% de doua ori (cumulat -36%), `017` si `018` Unit_Cost
+crescut cu 40% si apoi cu 200%, `019` comenzile existente rescrise la preturile
+curente (idempotenta), `020` stocuri aleatoare peste 10.000, `021` coduri de produs
+`PRD-0001`..., `024` 12 produse noi in catalog (7 -> 19 produse).
+
+`seed_rute.sql` populeaza cele 18 rute (km din `distanta_orase.xlsx`, timp din
+`timp_orase.xlsx`). `seed_comenzi_test.sql` e invechit (cauta coduri `P001`);
+pentru comenzi de test se foloseste `tools/seed_comenzi_25_test.php`.
 
 ## Cum rulezi local
 1. Porneste XAMPP (Apache + MySQL).

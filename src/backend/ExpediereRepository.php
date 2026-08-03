@@ -10,10 +10,10 @@ require_once __DIR__ . '/BaseRepository.php';
  */
 class ExpediereRepository extends BaseRepository
 {
-    const STATUSURI = ['In tranzit', 'Livrat', 'Returnat', 'Intarziat'];
+    const STATUSURI = ['In tranzit', 'Livrat', 'Returnat', 'Intarziat', 'Anulat'];
 
     /** Statusuri la care coletul nu a ajuns inca la destinatar. */
-    const STATUSURI_NELIVRAT = ['In tranzit', 'Returnat'];
+    const STATUSURI_NELIVRAT = ['In tranzit', 'Returnat', 'Anulat'];
 
     /** Orasul depozitului (origine ruta) -> codul de depozit din inventory. */
     const DEPOZIT_COD = ['Arad' => 1, 'Braila' => 2, 'Pitesti' => 3];
@@ -56,9 +56,9 @@ class ExpediereRepository extends BaseRepository
      */
     protected function selectFrom()
     {
-        return 'SELECT e.ExpediereID, e.awb, e.ClientID, e.SoferID, e.RutaID,
+        return 'SELECT e.ExpediereID, e.awb, e.ClientID, e.SoferID, e.RutaID, e.LinieID,
                        e.Data_expediere, e.Data_livrare_estimata, e.Data_livrare_efectiva,
-                       e.Status_expediere, e.Valoare_expediere, e.cost_carburant,
+                       e.Status_expediere, e.Valoare_expediere, e.cost_carburant, e.stoc_scazut,
                        c.Nume AS ClientNume,
                        s.Nume AS SoferNume,
                        CONCAT(r.Oras_origine, " - ", r.Oras_destinatie) AS Ruta
@@ -259,6 +259,54 @@ class ExpediereRepository extends BaseRepository
                 $this->pdo->rollBack();
             }
         }
+    }
+
+    /**
+     * Cat costa marfa dintr-o linie de comanda daca pleaca dintr-un anumit
+     * depozit: cantitatea x costul de achizitie de acolo (cel mai recent rand de
+     * stoc). Daca depozitul acela n-are inregistrat produsul, se ia cel mai
+     * recent rand al produsului, oriunde ar fi.
+     *
+     * Se foloseste si pentru simulari ("cat ar fi costat marfa daca pleca din
+     * alt depozit"), de aceea orasul e parametru, nu se citeste din expediere.
+     *
+     * @return float 0 daca linia nu exista sau produsul n-are cost inregistrat
+     */
+    public function costMarfa($linieId, $orasDepozit)
+    {
+        $stmt = $this->pdo->prepare('SELECT Product_ID, Cantitate FROM comenzi_produse WHERE LinieID = :id');
+        $stmt->execute(['id' => (int) $linieId]);
+        $linie = $stmt->fetch();
+
+        if ($linie === false) {
+            return 0.0;
+        }
+
+        $depozit = self::DEPOZIT_COD[$orasDepozit] ?? null;
+        $cost = false;
+
+        if ($depozit !== null) {
+            $q = $this->pdo->prepare(
+                'SELECT Cost_Unitar FROM inventory
+                 WHERE Product_ID = :pid AND depozit = :dep
+                 ORDER BY `Date` DESC LIMIT 1'
+            );
+            $q->execute(['pid' => $linie['Product_ID'], 'dep' => $depozit]);
+            $cost = $q->fetchColumn();
+        }
+
+        if ($cost === false || $cost === null) {
+            $q = $this->pdo->prepare(
+                'SELECT Cost_Unitar FROM inventory
+                 WHERE Product_ID = :pid ORDER BY `Date` DESC LIMIT 1'
+            );
+            $q->execute(['pid' => $linie['Product_ID']]);
+            $cost = $q->fetchColumn();
+        }
+
+        return $cost === false || $cost === null
+            ? 0.0
+            : (float) $cost * (int) $linie['Cantitate'];
     }
 
     /**

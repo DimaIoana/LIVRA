@@ -21,6 +21,26 @@
  *   rowLabel              -> callable($row): string, pentru confirmarea de stergere
  *   columns               -> coloanele tabelului
  *   fields                -> campurile formularului
+ *   rowModals             -> optional; ferestre cu detalii deschise de un buton
+ *                            pe fiecare rand (vezi mai jos)
+ *
+ * $config['rowModals'] (optional): [cheie => configuratie], unde configuratia are:
+ *   param        -> numele parametrului din query string (ex: 'algoritm')
+ *   buttonLabel  -> textul butonului: string sau callable($row): string
+ *   buttonClass  -> optional; clase CSS in plus, string sau callable($row)
+ *   title        -> callable($row): string, titlul ferestrei
+ *   body         -> callable($row): void, tipareste continutul ferestrei
+ *   wide         -> true daca fereastra are nevoie de mai multa latime
+ *   footer       -> optional; callable($row, $inapoi): void, tipareste butoanele
+ *                   de jos (in locul butonului implicit de inchidere)
+ * Coloana care arata butonul se declara in `columns` cu 'type' => 'modal' si
+ * 'modal' => cheia ferestrei.
+ *
+ * $config['rowActions'] (optional):
+ *   [numeActiune => callable($row): array] - actiuni POST proprii paginii, pe un
+ *   rand. Se declanseaza cu <input name="action" value="numeActiune"> plus
+ *   cheia primara. Callback-ul intoarce ['message' => ..., 'state' => 'ok'|'fail']
+ *   si mesajul se arata dupa redirect.
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -212,6 +232,8 @@ $formMode = 'add';
 $formValues = [];
 $formErrors = [];
 $confirmRow = null;
+$modalRow = null;
+$modalCheie = null;
 
 // --- Tratare POST (adauga / modifica / sterge) ---
 
@@ -220,6 +242,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Starea listei (cautare/sortare) vine din query string-ul actiunii formularului,
     // deci se citeste din $_REQUEST (GET + POST), nu doar din corpul POST.
     $target = $page . list_query($_REQUEST, $config['defaultSort']['column'], $config['defaultSort']['dir']);
+
+    // Actiuni proprii paginii (ex: trimite / anuleaza o expediere).
+    if ($action !== '' && isset($config['rowActions'][$action])) {
+        $row = $repo->getById((int) ($_POST[$pk] ?? 0));
+
+        if ($row === null) {
+            flash_set('Inregistrarea nu exista.', 'fail');
+        } else {
+            $rezultat = $config['rowActions'][$action]($row);
+            flash_set($rezultat['message'], $rezultat['state']);
+        }
+
+        header('Location: ' . $target);
+        exit;
+    }
 
     if ($action === 'delete') {
         $id = (int) ($_POST[$pk] ?? 0);
@@ -297,7 +334,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !$formOpen) {
         $formMode = 'add';
 
         foreach ($config['fields'] as $field) {
-            if (($field['default'] ?? '') === 'today') {
+            $default = $field['default'] ?? '';
+
+            // 'today' = data de azi; o functie = valoare calculata la deschiderea
+            // formularului (ex: urmatorul cod de produs, care depinde de ce e in
+            // baza chiar acum).
+            if (is_callable($default)) {
+                $formValues[$field['name']] = $default();
+            } elseif ($default === 'today') {
                 $formValues[$field['name']] = ($field['type'] ?? '') === 'datetime'
                     ? date('Y-m-d H:i:s')
                     : date('Y-m-d');
@@ -313,6 +357,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && !$formOpen) {
         }
     } elseif (isset($_GET['delete'])) {
         $confirmRow = $repo->getById((int) $_GET['delete']);
+    } elseif (!empty($config['rowModals'])) {
+        // Prima fereastra al carei parametru apare in adresa.
+        foreach ($config['rowModals'] as $cheie => $modal) {
+            if (isset($_GET[$modal['param']])) {
+                $modalRow = $repo->getById((int) $_GET[$modal['param']]);
+                $modalCheie = $cheie;
+                break;
+            }
+        }
     }
 }
 
@@ -407,9 +460,14 @@ foreach ($config['fields'] as $field) {
               $active = $col['key'] === $sort;
               $thClass = $active ? 'th--sorted' : '';
             ?>
-            <th data-sort="<?= h($col['key']) ?>" <?= $active ? 'data-dir="' . h($dir) . '"' : '' ?> class="<?= $thClass ?>">
-              <a class="th__link" href="<?= h(sort_href($page, $col, $search, $sort, $dir)) ?>"><?= h($col['label']) ?></a>
-            </th>
+            <?php if (($col['type'] ?? '') === 'modal'): ?>
+              <!-- Coloana de buton nu tine de o valoare din tabela, deci nu se sorteaza. -->
+              <th><?= h($col['label']) ?></th>
+            <?php else: ?>
+              <th data-sort="<?= h($col['key']) ?>" <?= $active ? 'data-dir="' . h($dir) . '"' : '' ?> class="<?= $thClass ?>">
+                <a class="th__link" href="<?= h(sort_href($page, $col, $search, $sort, $dir)) ?>"><?= h($col['label']) ?></a>
+              </th>
+            <?php endif; ?>
           <?php endforeach; ?>
           <th></th>
         </tr>
@@ -444,6 +502,23 @@ foreach ($config['fields'] as $field) {
                     <img class="thumb" src="<?= h($thumb) ?>" alt="">
                   <?php else: ?>
                     -
+                  <?php endif; ?>
+                <?php elseif ($type === 'modal'): ?>
+                  <?php
+                    $rm = $config['rowModals'][$col['modal']];
+                    // Eticheta goala = randul asta n-are buton (ex: o comanda
+                    // deja trimisa nu mai are ce decide).
+                    $eticheta = is_callable($rm['buttonLabel']) ? $rm['buttonLabel']($row) : $rm['buttonLabel'];
+                  ?>
+                  <?php if ($eticheta === ''): ?>
+                    -
+                  <?php else: ?>
+                    <?php
+                      $claseBtn = isset($rm['buttonClass'])
+                          ? (is_callable($rm['buttonClass']) ? $rm['buttonClass']($row) : $rm['buttonClass'])
+                          : '';
+                    ?>
+                    <a class="btn btn--mic <?= h($claseBtn) ?>" href="<?= h($page . $listQuery) ?>&<?= h($rm['param']) ?>=<?= (int) $row[$pk] ?>"><?= h($eticheta) ?></a>
                   <?php endif; ?>
                 <?php elseif ($type === 'date'): ?>
                   <?= h(fmt_date($row[$col['key']])) ?>
@@ -549,6 +624,26 @@ foreach ($config['fields'] as $field) {
           <button class="btn" type="submit">Salveaza</button>
         </div>
       </form>
+    </div>
+  </div>
+<?php endif; ?>
+
+<?php if ($modalRow !== null): ?>
+  <?php $rm = $config['rowModals'][$modalCheie]; ?>
+  <div class="modal">
+    <a class="modal__backdrop" href="<?= h($page . $listQuery) ?>"></a>
+    <div class="modal__box<?= !empty($rm['wide']) ? ' modal__box--lat' : '' ?>" role="dialog" aria-modal="true" aria-labelledby="rowmodal-title">
+      <h2 id="rowmodal-title" class="modal__title"><?= h($rm['title']($modalRow)) ?></h2>
+
+      <?php $rm['body']($modalRow); ?>
+
+      <?php if (isset($rm['footer'])): ?>
+        <?php $rm['footer']($modalRow, $page . $listQuery); ?>
+      <?php else: ?>
+        <div class="form__actions">
+          <a class="btn btn--ghost" href="<?= h($page . $listQuery) ?>">Inchide</a>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 <?php endif; ?>

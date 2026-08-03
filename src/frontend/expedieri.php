@@ -2,8 +2,15 @@
 
 require __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/ExpediereRepository.php';
+require __DIR__ . '/../backend/RutaRepository.php';
+require __DIR__ . '/../backend/OptimizareRuteService.php';
 
 $repo = new ExpediereRepository($pdo);
+
+// Pentru fereastra "Algoritm": ruta expedierii si serviciul care a ales-o.
+$rute = new RutaRepository($pdo);
+$optimizare = new OptimizareRuteService($pdo);
+$tipuriStrada = RutaRepository::TIPURI_STRADA;
 
 $config = [
     'active' => 'expedieri',
@@ -47,6 +54,28 @@ $config = [
         ],
         ['key' => 'Valoare_expediere', 'label' => 'Valoare', 'type' => 'money'],
         ['key' => 'cost_carburant', 'label' => 'Carburant', 'type' => 'money'],
+        ['key' => 'algoritm', 'label' => 'Algoritm', 'type' => 'modal', 'modal' => 'algoritm'],
+    ],
+
+    'rowModals' => [
+        // Butonul din coloana "Algoritm": arata de ce a ajuns coletul pe traseul
+        // asta - calculul timpului ajustat si clasamentul rutelor catre acelasi oras.
+        'algoritm' => [
+            'param' => 'algoritm',
+            'buttonLabel' => 'Explica',
+            'wide' => true,
+            'title' => function ($row) {
+                return 'Algoritm: ' . $row['Ruta'];
+            },
+            'body' => function ($row) use ($repo, $rute, $optimizare, $tipuriStrada) {
+                $rutaRand = $rute->getById((int) $row['RutaID']);
+                $expediere = $row;
+                $repoExpedieri = $repo;   // pentru costul marfii pe fiecare depozit
+
+                require __DIR__ . '/_algoritm_ruta.php';
+            },
+        ],
+
     ],
 
     'fields' => [

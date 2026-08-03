@@ -2,6 +2,298 @@
 
 Jurnal cronologic al lucrului pe proiect. Cele mai recente sus.
 
+## 2026-08-01 - Optimizat vs neoptimizat: doua grafice de bani in laborator
+- Sectiune noua in `laborator_rute.php`, **"Performanta financiara: cu si fara
+  optimizare"**: doua grafice cu bare verticale alaturate, fiecare cu **incasare,
+  cost si profit**.
+  - **Stanga - "Rute optimizate"**: cifrele reale, de pe rutele pe care au plecat
+    coletele, cu costul de carburant inregistrat pe expediere.
+  - **Dreapta - "Rute neoptimizate"**: aceleasi colete, dar duse fara algoritm -
+    **media** tuturor rutelor catre orasul lor.
+- Media, nu cel mai prost candidat: fara algoritm nu alegi anume varianta cea mai
+  rea, ci una oarecare, deci media e rezultatul asteptat. Comparatia cu cel mai
+  prost ar umfla castigul. Scrie asta pe pagina.
+- Amandoua graficele impart **aceeasi scara**, altfel doua bare la fel de inalte ar
+  insemna sume diferite si comparatia ar fi falsa.
+- Pe datele de acum (96 de livrari): profit **80.452,30** optimizat vs
+  **69.663,13** neoptimizat, adica **+10.789,17 lei (15,5%)** din optimizare.
+  Incasarea e identica in ambele (135.550,80 lei) - vanzarea nu depinde de drum -
+  deci toata diferenta vine din cost: **10.925,09 lei** carburant economisit,
+  8.927 km mai putin de condus.
+- `AnalizaRuteService::comparatieFinanciara()`. Pretul carburantului pentru
+  varianta imaginara se deduce din expedierea reala (lei inregistrati / km
+  parcursi), nu din API, ca ambele scenarii sa fie socotite la acelasi pret.
+  Costul marfii se recalculeaza per depozit de plecare, fiindca fiecare depozit
+  are alt cost de achizitie. Intra numai expedierile livrate, deci coloana din
+  stanga da exact cifrele din Business dashboard - verificat.
+- Helperii de scara (`scara_y`, `pas_rotund`, `scara_interval`, `inaltime`) au
+  iesit din `business.php` in `_grafic_scara.php`, folosit acum de ambele pagini,
+  in loc sa fie copiati. Adaugata clasa `.chart__bar--s3` (bara verde de profit).
+
+## 2026-08-03 - Semafor pe cutia Comenzi + coloana "Depozit" la produse
+- Cutia **Comenzi** din pagina principala arata trei becuri colorate, cu numarul
+  fiecarei stari:
+  - **galben** - comenzi noi (status `Noua`), inca nedecise;
+  - **rosu** - comenzi **pe pierdere**, adica toate cele care n-au plecat inca
+    (`Noua`, `In procesare`, **`Anulata`**) si a caror estimare de profit e
+    negativa. Anulatele intra dinadins: o comanda anulata fiindca pierdea bani
+    tot pe pierdere ramane, si tocmai ea trebuie sa se vada;
+  - **verde** - comenzi **acceptate** la trimitere: au decizia luata (rand in
+    `comenzi_financiar`) sau sunt deja `Trimisa`.
+- Becurile galben si rosu **licaresc** incet (1,6 s), fiindca cer o decizie; verdele
+  sta linistit, e o stare incheiata. Animatia se opreste singura daca sistemul
+  cere miscare redusa (`prefers-reduced-motion`).
+- Culoarea nu e singurul semn: langa fiecare bec scrie si ce inseamna ("1 noi",
+  "1 pe pierdere", "35 acceptate"). O stare cu zero nu apare deloc.
+- Rosul cere estimarea de profit, care trece prin algoritmul de rute, deci se
+  calculeaza doar pentru comenzile inca deschise (`ComandaRepository::deschise()`),
+  nu pentru toate. Verdele e un singur COUNT (`numarAcceptate()`).
+- La **Produse**, coloana "Locatie" se numeste acum **"Depozit"**, si in tabel si
+  in formular (unde scria "Locatie (depozit)"). Cheia din baza de date era deja
+  `depozit`, deci sortarea merge la fel.
+
+## 2026-08-03 - Modulul se numeste "Business Intelligence si analiza de date"
+- Redenumit peste tot unde se vede: cardul din pagina principala, titlul paginii
+  (`<title>`), subtitlul din antet si titlul mare din pagina. Fisierul ramane
+  `business.php`, iar linkul scurt din navigatie ramane "Business" - in bara de
+  navigatie n-ar incapea numele intreg.
+- Actualizata si descrierea de pe card, ramasa la trei rapoarte: acum spune ce
+  contine cu adevarat (vanzari, cheltuieli si profit pe zi, comenzi pe oras,
+  activitatea soferilor, raportul Power BI) si numara **9 rapoarte**.
+
+## 2026-08-03 - 12 produse noi in magazin
+- Migrarea **024**: catalogul creste de la 7 la **19 produse** (PRD-0008 ...
+  PRD-0019), pe categoriile existente: 6 Electronics (Mechanical Keyboard,
+  Wireless Headset, Webcam HD, Docking Station, External SSD 1TB, WiFi 6 Router),
+  3 Furniture (Standing Desk, Filing Cabinet, Monitor Stand) si 3 Accessories
+  (Mousepad XL, Laptop Bag, USB Hub 4 Port).
+- Fiecare produs are **cate un rand pe fiecare depozit** (Arad, Braila, Pitesti),
+  cu luni diferite - acelasi tipar ca produsele vechi. Asa magazinul arata un
+  singur rand pe produs (cel mai recent), iar algoritmul de optimizare are toate
+  cele trei depozite drept candidati. Verificat: pentru Standing Desk catre
+  Cluj-Napoca ies 3 rute (Arad 268 km, Pitesti 326 km, Braila 568 km).
+- Preturile stau in scara catalogului de acum (63 - 2.100 lei), iar costul de
+  achizitie e 8-13% din pret, ca la produsele existente, si difera putin de la un
+  depozit la altul.
+- Produsele noi n-au poza: in magazin primesc placa colorata pe categorie. Se pot
+  adauga poze oricand din back office, la Produse.
+
+## 2026-08-01 - Decizia de trimitere s-a mutat la comenzi
+- Butonul de profitabilitate a fost scos din **Expedieri** si pus in **Comenzi**:
+  decizia "trimit sau anulez" se ia inainte ca marfa sa plece, nu dupa. In
+  `expedieri` nu exista stare "inainte de plecare" - o expediere se naste direct
+  "In tranzit".
+- Butonul apare **doar pe comenzile inca deschise**: status `Noua` sau
+  `In procesare` **si** nicio linie expediata. Pe cele `Trimisa` sau `Anulata`
+  celula arata doar "-".
+- Profitul e o **estimare**, fiindca inca nu exista expediere: pentru fiecare
+  produs se ia ruta pe care ar alege-o algoritmul (prima din `ruteOptimizate`),
+  cu carburantul la pretul de azi si marfa de la depozitul de plecare al acelei
+  rute. Fereastra arata defalcarea pe produs: ruta, km, incasare, marfa,
+  carburant, profit.
+- **Trimite** inregistreaza cifrele in `comenzi_financiar` si trece comanda pe
+  "In procesare" (aprobata pentru expediere; expedierile se creeaza mai departe
+  din `expediere_comanda.php`). Idempotent.
+- **Anuleaza** nu inregistreaza nimic: comanda trece pe "Anulata" si nu mai
+  pleaca. Stocul nu se atinge - comanda n-a expediat nimic.
+- Migrarea **023**: tabela `comenzi_financiar` si stergerea lui
+  `expedieri_financiar` (ramasa nefolosita din 022). Statusul "Anulat" de la
+  expedieri ramane - se poate pune din formularul de editare.
+- Curatate din `ExpediereRepository` metodele ramase fara folos dupa mutare
+  (`situatieFinanciara`, `financiarInregistrat`, `inregistreazaFinanciar`,
+  `anuleaza`, `refaStoc`). `costMarfa` ramane, o foloseste fereastra de algoritm.
+- `_crud_page.php`: eticheta goala de buton inseamna "randul asta n-are buton",
+  deci o coloana de tip `modal` poate fi selectiva pe rand.
+
+## 2026-08-01 - Decizie de trimitere pentru expedierile neprofitabile
+- Coloana noua **Profit** in tabelul de expedieri, cu un buton pe fiecare rand:
+  scrie **"Neprofitabil"** (rosu) cand coletul iese pe pierdere, **"Profitabil"**
+  cand aduce bani, sau **"Anulata"** daca decizia a fost deja luata. Pe datele de
+  acum: 43 neprofitabile din 97.
+- Butonul deschide o fereastra cu situatia financiara (incasare, cost marfa, cost
+  carburant, profit) si **doua optiuni**:
+  - **Trimite** - inregistreaza cifrele in tabela noua `expedieri_financiar`,
+    inghetate asa cum erau la momentul deciziei. Idempotent: a doua apasare
+    rescrie acelasi rand, nu adauga altul.
+  - **Anuleaza** - nu inregistreaza nimic. Expedierea trece pe statusul nou
+    **"Anulat"**, iese din toate rapoartele financiare (care se uita doar la
+    "Livrat"), i se goleste data livrarii efective si **marfa se pune la loc pe
+    stoc** daca fusese scazuta la livrare.
+- Migrarea **022**: `Anulat` adaugat la `Status_expediere` si tabela
+  `expedieri_financiar` (cheie unica pe ExpediereID, stergere in cascada).
+- **Bug gasit la test**: `ExpediereRepository::getById()` nu aducea coloana
+  `stoc_scazut`, deci anularea nu punea marfa inapoi pe stoc. Coloana e acum in
+  `selectFrom()`; verificat pe o expediere reala (stoc 14.727 -> 14.729 la
+  anulare, inapoi la 14.727 dupa restaurare).
+- `_crud_page.php` a primit doua mecanisme noi, refolosibile:
+  - `rowModals` (in locul lui `rowModal`) - mai multe ferestre pe aceeasi pagina,
+    fiecare cu coloana ei; eticheta si clasa butonului pot fi si functii de rand;
+  - `rowActions` - actiuni POST proprii paginii, pe un rand, cu mesaj dupa redirect.
+
+## 2026-08-01 - Coduri de produs incrementale (PRD-0001...)
+- Migrarea **021**: codurile P001...P007 devin **PRD-0001...PRD-0007**. Prefix
+  clar plus patru cifre, deci se poate creste pana la PRD-9999 fara sa-si schimbe
+  forma. Maparea trece printr-un tabel temporar, ca ambele tabele sa primeasca
+  exact aceleasi coduri.
+- **Legaturile nu se pierd.** `Product_ID` nu are cheie straina, dar apare in doua
+  tabele - `inventory` si `comenzi_produse` - si amandoua se schimba in aceeasi
+  tranzactie. Restul merg pe alte chei si nu se ating: expedierile sunt legate prin
+  `LinieID` de `comenzi_produse`, deci urmeaza automat. Verificat dupa rulare:
+  98 de linii de comanda mapate, **0 linii orfane**, **0 expedieri** fara produs.
+- La **creare**, campul "Cod produs" vine precompletat cu urmatorul cod liber
+  (`InventoryRepository::codNou()`: cel mai mare numar folosit + 1, deci codurile
+  nu se refolosesc nici dupa o stergere). Lasat gol, se genereaza tot asa.
+- `inventory` ramane istoric lunar: acelasi produs are cate un rand pe luna, cu
+  acelasi cod. Ca sa adaugi o luna noua la un produs existent, pui codul lui in
+  loc de cel generat. Daca pui un cod luat de **alt** produs, adaugarea e oprita cu
+  un mesaj care spune al cui e codul si care ar fi cel nou - altfel doua produse ar
+  imparti un cod si n-ar mai putea fi deosebite. Editarea nu e afectata (altfel
+  n-ai mai putea redenumi un produs).
+- `_crud_page.php`: campurile accepta acum si o **functie** ca `default`, evaluata
+  la deschiderea formularului. Se poate refolosi oriunde e nevoie de o valoare
+  calculata din baza.
+- `seed_comenzi_test.sql` a ramas in urma (cauta P001...P007) - marcat ca invechit
+  in antet, cu trimitere la `tools/seed_comenzi_25_test.php`.
+
+## 2026-08-01 - Stocuri aleatoare, toate peste 10.000
+- Migrarea **020**: `inventory.Stock_Level` primeste o cifra aleatoare intre
+  10.001 si 50.000 pe fiecare din cele 19 randuri (fiecare luna a fiecarui produs,
+  in fiecare depozit). Verificat dupa rulare: minim 10.088, maxim 49.380, niciun
+  rand sub 10.000.
+- Trei efecte de stiut:
+  - **"sub prag" a devenit 0** in back office - pragurile de reaprovizionare
+    (`Reorder_Point`) au ramas la 10-100, deci nu mai poate fi atins nimic;
+  - **toate depozitele au acum orice produs pe stoc**, deci algoritmul de
+    optimizare are mereu toti candidatii si va alege ruta cea mai rapida.
+    Procentul "pe ruta optima" din laborator (acum 50,5%) va creste pe masura ce
+    apar expedieri noi - vechile 97 raman cum sunt;
+  - magazinul nu mai respinge comenzi pentru stoc insuficient.
+- Migrarea foloseste `RAND()`, deci la fiecare rulare ies alte cifre (mereu peste
+  10.000). Stocurile de dinainte se pierd - erau oricum date de test.
+
+## 2026-08-01 - Schema algoritmului, in pagina de laborator
+- Poza pusa de user in `src/backend/imagini/schema algoritm.jpg` apare acum in
+  `laborator_rute.php`, in cardul "Ce face algoritmul": pasii la stanga, schema
+  la dreapta, pe o coloana de 260px (sub 860px latime trece sub pasi).
+- Poza sta la 260px, nu pe toata latimea cardului - e un desen de citit dintr-o
+  privire. Fiindca are text scris pe ea, e si link catre imaginea intreaga
+  (fila noua), plus "Vezi schema mare" in legenda.
+- E servita direct de Apache din folderul de backend, unde a pus-o userul; nu
+  exista `.htaccess` care sa blocheze folderul, deci merge cu cale relativa.
+
+## 2026-08-01 - Bani pe fiecare ruta, cu grafic sub tabelul KPI
+- Tabelul KPI din fereastra "Algoritm" are randuri noi de bani: **cost marfa**,
+  **cost total**, **incasare** si **profit** (verde/rosu dupa semn), plus un
+  **grafic cu bare verticale** sub ele, cate unul pe coloana: cost, incasare,
+  profit.
+- Pe coloana **Selectata** sunt cifrele **reale** ale expedierii (incasarea si
+  costul de carburant inregistrate la plecare, cu pretul motorinei de atunci);
+  pe celelalte e o **simulare** a aceluiasi colet dus pe ruta aceea, cu marfa
+  luata din depozitul ei si carburantul la pretul de azi. Scrie sub fiecare
+  grafic: "cifre reale" / "simulare".
+- Costul marfii difera de la o coloana la alta fiindca fiecare depozit are
+  propriul cost de achizitie (`ExpediereRepository::costMarfa()`, cu revenire pe
+  cel mai recent rand al produsului daca depozitul n-are stoc inregistrat).
+- Toate graficele impart **aceeasi scara**, altfel doua coloane alaturate ar
+  arata bare la fel de inalte pentru sume diferite. Cand profitul e negativ,
+  scara are si partea de sub zero, iar bara coboara sub linia lui zero.
+- `ExpediereRepository::selectFrom()` aduce si `LinieID`, de care depinde costul
+  marfii. Fara expediere (fereastra deschisa din alta parte) se arata doar
+  partea de timp.
+
+## 2026-08-01 - Fereastra de algoritm, redusa la verdict + tabelul KPI
+- Scoase sectiunile **"Cum se calculeaza timpul ajustat"** si **"Drum si
+  carburant"**: amandoua vorbeau doar despre ruta curenta, iar cifrele lor
+  (timp prestabilit, viteza, tip drum, vreme, km, motorina, cost) sunt deja in
+  tabelul KPI, pe toate rutele deodata.
+- Fereastra are acum trei lucruri: contextul expedierii, verdictul si tabelul KPI.
+- Curatate din PHP variabilele ramase fara folos (`$criterii`, `$clasaAjustare`,
+  `$litri`) si din CSS clasele `.alg__cifre` / `.alg__cifra` / `.alg__eticheta` /
+  `.alg__valoare`, care nu mai erau pe nicio pagina.
+
+## 2026-08-01 - Tabel KPI pe coloane in fereastra de algoritm
+- Tabelul de comparatie din fereastra "Algoritm" e acum **pivotat**: o coloana
+  pentru fiecare ruta candidata, cu **ruta scrisa in cap de coloana**
+  (ex: "Braila → Iasi") si o eticheta care spune daca e **Selectata** (cea pe
+  care a plecat coletul) sau **Normala**. Coloana selectata e evidentiata.
+- Randurile sunt indicatorii: loc dupa algoritm, timp ajustat, diferenta fata de
+  locul 1, timp prestabilit, viteza, tip drum, vreme, distanta, motorina si cost
+  carburant. Asa se compara acelasi KPI intre rute citind pe orizontala.
+- Verdictul de sus spune acum si timpul fiecarei rute, nu doar diferenta dintre
+  ele ("Ruta asta face 292 min ... urmatoarea ar face 516 min, adica cu 224 min
+  mai mult"), fiindca inainte cifra de diferenta se putea citi drept timp total.
+
+## 2026-08-01 - Coloana "Algoritm" mutata la expedieri
+- Coloana **Algoritm** a fost scoasa din pagina **Rute** si pusa in pagina
+  **Expedieri**, unde intrebarea "de ce s-a ales traseul asta" are un raspuns
+  concret: coletul chiar a plecat pe el.
+- Fereastra incepe acum cu contextul expedierii (AWB, traseu, data plecarii,
+  soferul, data estimata si cea efectiva), apoi urmeaza aceleasi lucruri ca
+  inainte: verdictul (castigatoare / locul N), calculul timpului ajustat criteriu
+  cu criteriu, drumul si carburantul, si clasamentul rutelor catre acelasi oras.
+- `_algoritm_ruta.php` primeste acum ruta in `$rutaRand` si, optional, expedierea
+  in `$expediere`, deci poate fi refolosit si din alta pagina.
+- Lista tipurilor de drum a ajuns constanta unica, `RutaRepository::TIPURI_STRADA`,
+  in loc sa fie scrisa in fiecare pagina care o afiseaza.
+
+## 2026-08-01 - Coloana "Algoritm" la rute
+- Pagina **Rute** are o coloana noua **Algoritm**, cu un buton "Explica" pe fiecare
+  rand. Butonul deschide o fereastra care arata de ce ar fi (sau nu ar fi) aleasa
+  ruta aceea:
+  - **verdictul**: "Ruta castigatoare" sau "Locul N", cu cate minute pierde fata
+    de prima si mentiunea ca se foloseste doar daca depozitul castigator n-are
+    produsul pe stoc;
+  - **calculul timpului ajustat**, criteriu cu criteriu (timp prestabilit, viteza,
+    tip drum, vreme in timp real), cu regula fiecaruia si minutele adaugate sau
+    scazute - rosu cand incetinesc, verde cand ajuta;
+  - **drum si carburant**: km, litri de motorina (12 L/100 km) si costul, la
+    pretul curent al motorinei;
+  - **toate rutele catre acelasi oras**, ordonate dupa timp ajustat, cu ruta
+    curenta evidentiata - asa se vede direct pe ce loc iese.
+- `OptimizareRuteService::explicaRuta()` face calculul si clasamentul, folosind
+  exact aceleasi ajustari ca la expedierea reala. Continutul ferestrei sta in
+  `src/frontend/_algoritm_ruta.php`.
+- `_crud_page.php` a primit un mecanism generic `rowModal`: o coloana de tip
+  `modal` pune butonul pe fiecare rand, iar pagina isi tipareste continutul
+  ferestrei printr-un callback. Se poate refolosi la orice alt tabel.
+
+## 2026-08-01 - Laborator: algoritmul de optimizare rute si performanta lui
+- Cutie noua in back office (`index.php`) si pagina noua `laborator_rute.php`:
+  ce decide algoritmul, dupa ce criterii, si cat de bine a ales pe cursele deja
+  plecate. Legata si din navigatie ("Laborator").
+- Explicatia are pasii algoritmului (intrare, candidati, scor, ordonare, decizia
+  operatorului, iesire) si cele **4 criterii** care compun timpul ajustat.
+  Pragurile nu sunt scrise de mana: se obtin chemand
+  `OptimizareRuteService::ajustareViteza()` / `ajustareTip()`, deci pagina nu poate
+  ramane in urma daca se schimba regulile in cod.
+- "Algoritmul, rulat acum": ruleaza efectiv `ruteOptimizate()` pe un produs si un
+  oras, cu vremea in timp real, si arata clasamentul cu toate ajustarile.
+- Performanta, masurata pe cele 97 de curse din baza: **50,5%** au plecat pe ruta
+  cea mai rapida catre orasul lor; **36.145 min** economisiti fata de alegerea
+  celui mai prost candidat; **13.036 km** in plus fata de ruta optima
+  (1.564 L, 16.628,72 lei). Tabel pe orase, plus toate rutele grupate pe destinatie.
+- Cifra de km in plus e explicata pe pagina ca fiind **costul asezarii marfii in
+  depozite**, nu o greseala a algoritmului: el alege doar dintre depozitele care
+  aveau produsul pe stoc.
+- Masurarea foloseste doar partea determinista a scorului (prestabilit + viteza +
+  drum). Vremea e luata in timp real la expediere si nu se salveaza, deci nu se
+  poate reconstitui; altfel aceeasi cursa ar da alt rezultat la fiecare incarcare.
+- Constatare pe datele de acum: in toate cele 6 orase ruta cea mai rapida e si cea
+  mai scurta, deci criteriul de timp nu costa carburant - dar e o proprietate a
+  datelor, nu o garantie a algoritmului.
+- `AnalizaRuteService` (doar citire) + `css/laborator.css`. Fara schimbari de schema.
+
+## 2026-08-01 - Rapoartele lungi se pliaza sub un buton
+- **"Cat de folosit e fiecare traseu"** si **"Cursele soferilor"** stau acum sub
+  cate un buton ("Arata traseele" / "Arata cursele"), **inchise la incarcarea
+  paginii**. Butonul arata si cat e inauntru (18 trasee, 97 curse), iar eticheta
+  si sageata se schimba cand se deschide.
+- Comutarea se face cu `details`/`summary`, deci fara JS si accesibil de la
+  tastatura. Clasa comuna `.pliant` in `business.css`; tabelul "Vezi cifrele" al
+  traseelor ramane inauntru, ca al doilea nivel.
+- Bara de derulare orizontala se pune numai pe continutul care e doar tabel: un
+  container care taie pe orizontala ar taia si tooltipurile barelor.
+
 ## 2026-07-31 - Radar: cine a fost cel mai profitabil sofer
 - Raport nou in Business dashboard, inainte de cardul Power BI: **grafic radar**
   cu o axa pentru fiecare sofer si o singura serie - **profitul** adus pe traseele

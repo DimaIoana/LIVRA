@@ -10,9 +10,51 @@ require_once __DIR__ . '/BaseRepository.php';
  */
 class InventoryRepository extends BaseRepository
 {
+    /** Prefixul codului de produs; dupa el urmeaza numarul, cu CIFRE_COD cifre. */
+    const PREFIX_COD = 'PRD-';
+    const CIFRE_COD = 4;
+
     protected function table()
     {
         return 'inventory';
+    }
+
+    /**
+     * Urmatorul cod de produs liber: PRD-0001, PRD-0002, ... Se ia numarul cel
+     * mai mare folosit si se adauga unu, deci codurile cresc mereu si nu se
+     * refolosesc nici dupa stergerea unui produs.
+     *
+     * Codurile care nu respecta formatul (daca a scris cineva ceva de mana) sunt
+     * ignorate la numarat, dar raman in tabela; ele nu pot bloca generarea.
+     */
+    public function codNou()
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT MAX(CAST(SUBSTRING(Product_ID, :start) AS UNSIGNED))
+             FROM inventory
+             WHERE Product_ID LIKE :prefix'
+        );
+        $stmt->execute([
+            'start' => strlen(self::PREFIX_COD) + 1,
+            'prefix' => self::PREFIX_COD . '%',
+        ]);
+
+        $ultim = (int) $stmt->fetchColumn();
+
+        return self::PREFIX_COD . str_pad($ultim + 1, self::CIFRE_COD, '0', STR_PAD_LEFT);
+    }
+
+    /** Numele produsului care poarta deja codul asta, sau null daca e liber. */
+    private function numeExistent($cod)
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT Product_Name FROM inventory WHERE Product_ID = :cod LIMIT 1'
+        );
+        $stmt->execute(['cod' => $cod]);
+
+        $nume = $stmt->fetchColumn();
+
+        return $nume === false ? null : (string) $nume;
     }
 
     protected function primaryKey()
@@ -39,8 +81,33 @@ class InventoryRepository extends BaseRepository
     {
         $errors = [];
 
-        $product_id = $this->validText($errors, $input, 'Product_ID', 'Codul produsului', 10);
         $product_name = $this->validText($errors, $input, 'Product_Name', 'Numele produsului', 100);
+
+        // Codul: lasat gol inseamna "produs nou", deci se genereaza urmatorul.
+        // Formularul il vine oricum precompletat; golul e plasa de siguranta.
+        $product_id = trim((string) ($input['Product_ID'] ?? ''));
+
+        if ($product_id === '') {
+            $product_id = $this->codNou();
+        } else {
+            $product_id = $this->validText($errors, $input, 'Product_ID', 'Codul produsului', 10);
+        }
+
+        // La adaugare (nu la editare), un cod deja folosit inseamna ca se adauga
+        // o luna noua la un produs existent - deci numele trebuie sa fie al lui.
+        // Un nume diferit e aproape sigur o greseala: doua produse ar ajunge sa
+        // imparta acelasi cod si n-ar mai putea fi deosebite nicaieri.
+        $esteAdaugare = trim((string) ($input[$this->primaryKey()] ?? '')) === '';
+
+        if ($esteAdaugare && !$errors && $product_id !== '') {
+            $numeExistent = $this->numeExistent($product_id);
+
+            if ($numeExistent !== null && mb_strtolower($numeExistent) !== mb_strtolower($product_name)) {
+                $errors[] = 'Codul "' . $product_id . '" este deja al produsului "' . $numeExistent
+                    . '". Lasa campul gol ca sa primesti un cod nou (' . $this->codNou()
+                    . '), sau scrie acelasi nume daca adaugi o luna noua la acest produs.';
+            }
+        }
         $category = $this->validText($errors, $input, 'Category', 'Categoria', 50);
 
         $stock_level = $this->validInt($errors, $input, 'Stock_Level', 'Stocul', 0);

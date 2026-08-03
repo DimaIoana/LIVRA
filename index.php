@@ -1,8 +1,30 @@
 <?php
 
 require __DIR__ . '/src/database/db_connection.php';
+require __DIR__ . '/src/backend/ComandaRepository.php';
 
 $versiune_mysql = $pdo->query('SELECT VERSION()')->fetchColumn();
+
+// Semaforul de pe cutia Comenzi: galben = comenzi noi, rosu = comenzi pe
+// pierdere (inclusiv cele anulate tocmai fiindca pierdeau bani), verde = comenzi
+// acceptate la trimitere.
+//
+// Rosul cere estimarea de profit, care trece prin algoritmul de rute, deci se
+// calculeaza doar pentru comenzile care n-au plecat inca - pe cele plecate se
+// stiu deja cifrele reale, iar pe toate ar fi munca degeaba.
+$repoComenzi = new ComandaRepository($pdo);
+$optimizareComenzi = new OptimizareRuteService($pdo);
+
+$comenziNoi = (int) $pdo->query("SELECT COUNT(*) FROM comenzi WHERE Status = 'Noua'")->fetchColumn();
+$comenziPePierdere = 0;
+
+foreach ($repoComenzi->faraExpediere() as $comanda) {
+    if ($repoComenzi->situatieFinanciara($comanda, $optimizareComenzi)['profit'] < 0) {
+        $comenziPePierdere++;
+    }
+}
+
+$comenziAcceptate = $repoComenzi->numarAcceptate();
 
 // Cifrele afisate pe carduri; cheia e si numele tabelei.
 $sectiuni = [
@@ -27,7 +49,12 @@ $sectiuni = [
         'link' => 'src/frontend/comenzi.php',
         'total' => $pdo->query('SELECT COUNT(*) FROM comenzi')->fetchColumn(),
         'unitate' => 'comenzi',
-        'extra' => $pdo->query("SELECT COUNT(*) FROM comenzi WHERE Status = 'Noua'")->fetchColumn() . ' noi',
+        // Semafor: doar starile care exista chiar acum ajung pe cutie.
+        'stari' => [
+            ['cheie' => 'nou', 'numar' => $comenziNoi, 'text' => 'noi'],
+            ['cheie' => 'pierdere', 'numar' => $comenziPePierdere, 'text' => 'pe pierdere'],
+            ['cheie' => 'acceptat', 'numar' => $comenziAcceptate, 'text' => 'acceptate'],
+        ],
     ],
     [
         'titlu' => 'Soferi',
@@ -58,11 +85,22 @@ $sectiuni = [
         )->fetchColumn() . ' sub prag',
     ],
     [
-        'titlu' => 'Business dashboard',
-        'descriere' => 'Rapoarte: vanzari pe zi, cheltuieli pe zi si comenzi pe oras.',
+        'titlu' => 'Business Intelligence si analiza de date',
+        'descriere' => 'Vanzari, cheltuieli si profit pe zi, comenzi pe oras, activitatea soferilor si raportul Power BI.',
         'link' => 'src/frontend/business.php',
-        'total' => 3,
+        // Cele opt rapoarte proprii, plus raportul Power BI incorporat.
+        'total' => 9,
         'unitate' => 'rapoarte',
+    ],
+    [
+        'titlu' => 'Laborator: algoritm de optimizare rute si performanta lui',
+        'descriere' => 'Ce decide algoritmul, dupa ce criterii, si cat de bine a ales pe cursele deja plecate.',
+        'link' => 'src/frontend/laborator_rute.php',
+        // Cele patru criterii care compun timpul ajustat: durata prestabilita,
+        // viteza, tipul drumului si vremea.
+        'total' => 4,
+        'unitate' => 'criterii',
+        'extra' => $pdo->query('SELECT COUNT(*) FROM expedieri')->fetchColumn() . ' curse analizate',
     ],
 ];
 ?>
@@ -93,6 +131,19 @@ $sectiuni = [
                     <?php endif; ?></span>
                     <h2 class="sectiune__titlu"><?= htmlspecialchars($s['titlu']) ?></h2>
                     <p class="sectiune__descriere"><?= htmlspecialchars($s['descriere']) ?></p>
+
+                    <?php if (!empty($s['stari'])): ?>
+                        <span class="stari">
+                            <?php foreach ($s['stari'] as $stare): ?>
+                                <?php if ((int) $stare['numar'] > 0): ?>
+                                    <span class="stare stare--<?= htmlspecialchars($stare['cheie']) ?>">
+                                        <span class="stare__bec"></span>
+                                        <?= (int) $stare['numar'] ?> <?= htmlspecialchars($stare['text']) ?>
+                                    </span>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>

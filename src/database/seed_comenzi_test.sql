@@ -7,6 +7,12 @@
 --
 -- Atentie: fisierul NU e idempotent - la fiecare rulare adauga alt set de comenzi.
 -- Rulare: mysql -u root sameday_company < src/database/seed_comenzi_test.sql
+--
+-- INVECHIT dupa migrarea 021: cauta produsele dupa codurile vechi (P001...P007),
+-- care au devenit PRD-0001...PRD-0007. Rulat asa cum e, JOIN-urile nu mai
+-- gasesc nimic si comenzile ies fara linii. Pentru date de test noi foloseste
+-- `tools/seed_comenzi_25_test.php`, care ia produsele din catalog, nu pe cod
+-- scris de mana.
 
 -- De unde incep comenzile adaugate acum (pentru recalcularea totalurilor la final).
 SET @prima_comanda = (SELECT COALESCE(MAX(ComandaID), 0) + 1 FROM comenzi);

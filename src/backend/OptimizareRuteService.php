@@ -160,6 +160,88 @@ class OptimizareRuteService
         return $rezultate;
     }
 
+    /**
+     * Explicatia algoritmului pentru o singura ruta, asa cum se vede in back
+     * office: din ce se compune timpul ei ajustat, cat carburant cere si pe ce
+     * loc iese fata de celelalte rute catre acelasi oras.
+     *
+     * Clasamentul se face pe timp ajustat, exact criteriul dupa care alege
+     * `ruteOptimizate()`. Diferenta fata de o expediere reala e ca acolo intra
+     * doar depozitele care au produsul pe stoc; aici se compara toate rutele
+     * catre orasul respectiv, ca sa se vada potentialul fiecarui depozit.
+     *
+     * @return array ['ruta', 'clasament', 'loc', 'castigator', 'diferenta']
+     *               unde 'diferenta' = minutele pana la locul 1 (0 daca e primul)
+     */
+    public function explicaRuta(array $ruta)
+    {
+        $asta = $this->augmenteaza($ruta, $this->codDepozit($ruta['Oras_origine']));
+
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM rute WHERE Oras_destinatie = :d'
+        );
+        $stmt->execute(['d' => $ruta['Oras_destinatie']]);
+
+        $clasament = [];
+        foreach ($stmt->fetchAll() as $r) {
+            $r = $this->augmenteaza($r, $this->codDepozit($r['Oras_origine']));
+            $r['este_asta'] = (int) $r['RutaID'] === (int) $ruta['RutaID'];
+            $clasament[] = $r;
+        }
+
+        // Criteriul e timpul ajustat. Kilometrii si numele departajeaza doar
+        // afisarea, ca ordinea sa fie mereu aceeasi la egalitate de timp.
+        usort($clasament, function ($a, $b) {
+            if ($a['timp_ajustat'] !== $b['timp_ajustat']) {
+                return $a['timp_ajustat'] <=> $b['timp_ajustat'];
+            }
+
+            if ((int) $a['Distanta_km'] !== (int) $b['Distanta_km']) {
+                return (int) $a['Distanta_km'] <=> (int) $b['Distanta_km'];
+            }
+
+            return strcmp($a['Oras_origine'], $b['Oras_origine']);
+        });
+
+        $loc = 0;
+        foreach ($clasament as $i => $r) {
+            if ($r['este_asta']) {
+                $loc = $i + 1;
+                break;
+            }
+        }
+
+        $castigator = $clasament ? $clasament[0] : null;
+
+        return [
+            'ruta' => $asta,
+            'clasament' => $clasament,
+            'loc' => $loc,
+            'castigator' => $castigator,
+            'diferenta' => $castigator === null ? 0 : $asta['timp_ajustat'] - $castigator['timp_ajustat'],
+        ];
+    }
+
+    /** Codul de depozit al unui oras de plecare (sau null daca nu e depozit). */
+    private function codDepozit($oras)
+    {
+        $cod = array_search($oras, self::DEPOZITE, true);
+
+        return $cod === false ? null : $cod;
+    }
+
+    /** Litrii de motorina ceruti de o ruta, la consumul mediu al dubei. */
+    public function litri($km)
+    {
+        return round(((float) $km / 100) * self::CONSUM_L_100KM, 1);
+    }
+
+    /** Pretul curent al motorinei (lei/L), pentru afisare. */
+    public function pretMotorina()
+    {
+        return $this->carburant->pretMotorina();
+    }
+
     /** Adauga pe randul de ruta ajustarile, timpul ajustat si explicatia. */
     private function augmenteaza(array $ruta, $depozitCod)
     {

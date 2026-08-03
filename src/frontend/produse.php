@@ -31,7 +31,7 @@ $config = [
         ['key' => 'Category', 'label' => 'Categorie', 'type' => 'tag'],
         [
             'key' => 'depozit',
-            'label' => 'Locatie',
+            'label' => 'Depozit',
             'type' => 'tag',
             'format' => function ($row) use ($depozite) {
                 return $depozite[(int) $row['depozit']] ?? 'Nespecificat';
@@ -54,7 +54,19 @@ $config = [
     ],
 
     'fields' => [
-        ['name' => 'Product_ID', 'label' => 'Cod produs', 'type' => 'text', 'maxlength' => 10, 'required' => true],
+        [
+            'name' => 'Product_ID',
+            'label' => 'Cod produs',
+            'type' => 'text',
+            'maxlength' => 10,
+            // Vine precompletat cu urmatorul cod liber, calculat la deschiderea
+            // formularului. Nu e obligatoriu: lasat gol, se genereaza tot asa.
+            'default' => function () use ($repo) {
+                return $repo->codNou();
+            },
+            'hint' => 'Generat automat, incremental. Lasa-l asa pentru un produs nou; '
+                . 'pune codul unui produs existent doar daca adaugi o luna noua la el.',
+        ],
         ['name' => 'Product_Name', 'label' => 'Nume produs', 'type' => 'text', 'maxlength' => 100, 'required' => true],
         [
             'name' => 'poze',
@@ -68,7 +80,7 @@ $config = [
         ['name' => 'Category', 'label' => 'Categorie', 'type' => 'text', 'maxlength' => 50, 'required' => true],
         [
             'name' => 'depozit',
-            'label' => 'Locatie (depozit)',
+            'label' => 'Depozit',
             'type' => 'select',
             'options' => array_merge(
                 [['id' => '', 'text' => '— alege depozit —']],

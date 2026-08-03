@@ -1,4 +1,4 @@
-/* Business dashboard: grafice desenate din HTML + CSS, fara JS.
+/* Business Intelligence si analiza de date: grafice desenate din HTML + CSS, fara JS.
    Barele isi iau inaltimea dintr-un `style="height: X%"` calculat in PHP, iar
    tortul dintr-un `conic-gradient` construit tot in PHP. */
 
@@ -169,6 +169,10 @@
 
 .chart__bar--s2 {
   background: var(--s2);
+}
+
+.chart__bar--s3 {
+  background: var(--s3);
 }
 
 .chart__value {
@@ -605,8 +609,79 @@
   overflow-x: auto;
 }
 
-/* Tabel afisat direct, fara `details` in jurul lui (cursele soferilor). */
-.chart__data--deschis {
+/* --- Raport pliat sub un buton (inchis la prima incarcare) --- */
+
+/* Rapoartele lungi (traseele, cursele soferilor) nu se deschid singure: ar
+   impinge restul paginii cu zeci de randuri. `details` face butonul sa comute
+   fara JS, si ramane accesibil de la tastatura. */
+.pliant {
+  border-top: 1px solid var(--border);
+}
+
+.pliant__buton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;   /* fara triunghiul implicit: avem sageata noastra */
+}
+
+.pliant__buton::-webkit-details-marker {
+  display: none;
+}
+
+.pliant__buton:hover {
+  background: var(--surface-2);
+}
+
+.pliant__buton:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.pliant__sageata {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.pliant[open] .pliant__sageata {
+  transform: rotate(90deg);
+}
+
+/* Eticheta se schimba dupa starea butonului: "Arata ..." / "Ascunde ...". */
+.pliant__deschis {
+  display: none;
+}
+
+.pliant[open] .pliant__deschis {
+  display: inline;
+}
+
+.pliant[open] .pliant__inchis {
+  display: none;
+}
+
+.pliant__hint {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pliant[open] .pliant__buton {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Bara de derulare se pune numai pe continutul care e doar tabel: un container
+   care taie pe orizontala ar taia si tooltipurile barelor, care ies in sus. */
+.pliant__continut--tabel {
   overflow-x: auto;
 }
 

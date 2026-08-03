@@ -7,6 +7,18 @@ require_once __DIR__ . '/BaseRepository.php';
  */
 class RutaRepository extends BaseRepository
 {
+    /**
+     * Tipurile de drum cu numele lor citibil, de la cel mai rapid la cel mai
+     * greu: autostrada > DN > drum judetean > drum comunal. Stau aici ca sa
+     * existe o singura lista pentru toate paginile care le afiseaza.
+     */
+    const TIPURI_STRADA = [
+        'autostrada' => 'Autostrada',
+        'dn' => 'Drum national (DN)',
+        'drum judetean' => 'Drum judetean',
+        'drum comunal' => 'Drum comunal',
+    ];
+
     protected function table()
     {
         return 'rute';

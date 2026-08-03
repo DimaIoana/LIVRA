@@ -142,6 +142,18 @@ body {
   cursor: default;
 }
 
+/* Buton mic, cat sa incapa intr-o celula de tabel. */
+.btn--mic {
+  padding: 5px 12px;
+  font-size: 13px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.btn--mic:hover {
+  box-shadow: 0 3px 10px rgba(51, 85, 255, 0.3);
+}
+
 .btn--ghost {
   background: var(--surface);
   color: var(--text);
@@ -361,6 +373,13 @@ body {
   background: var(--surface);
   border-radius: var(--radius);
   padding: 24px;
+}
+
+/* Fereastra cu tabele (ex: explicatia algoritmului de rute) are nevoie de
+   mai multa latime decat un formular. */
+.modal__box--lat {
+  max-width: 760px;
+  overflow: auto;   /* si pe orizontala: pe ecran mic tabelele sunt mai late */
 }
 
 .modal__title {
@@ -1020,4 +1039,253 @@ body {
 .cta__text {
   color: var(--text-muted);
   font-size: 14px;
+}
+
+/* --- Explicatia algoritmului de rute (fereastra din pagina Rute) --- */
+
+.alg__verdict {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alg__titlu {
+  margin: 22px 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+}
+
+.alg__tabel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* Numele criteriului deasupra, regula dupa care se aplica dedesubt. */
+.alg__criteriu {
+  display: block;
+  font-weight: 600;
+}
+
+.alg__detaliu {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* Minutele adaugate de un criteriu incetinesc livrarea, cele scazute o ajuta. */
+.alg__minute--rau {
+  color: var(--fail);
+  font-weight: 600;
+}
+
+.alg__minute--bun {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.alg__tabel tfoot td {
+  font-weight: 700;
+  border-top: 1px solid var(--border);
+}
+
+.alg__rand--asta {
+  background: var(--brand-soft);
+}
+
+.alg__nota {
+  margin: 18px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Contextul expedierii, deasupra explicatiei algoritmului. */
+.alg__context {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* Tabelul KPI din fereastra de algoritm: se citeste pe verticala, o coloana
+   pentru fiecare ruta candidata. */
+.alg__kpi {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.alg__kpi th,
+.alg__kpi td {
+  text-align: right;
+  vertical-align: middle;
+}
+
+.alg__kpi thead th {
+  vertical-align: bottom;
+}
+
+/* Prima coloana tine numele indicatorului, deci ramane text obisnuit la stanga. */
+.alg__kpi thead th:first-child,
+.alg__kpi-nume {
+  text-align: left;
+}
+
+.alg__kpi-nume {
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Ruta din cap de coloana: numele deasupra, eticheta de stare dedesubt. */
+.alg__ruta {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Coloana rutei pe care a plecat coletul. */
+.alg__col--selectata {
+  background: var(--brand-soft);
+}
+
+.alg__kpi--tare {
+  font-weight: 700;
+}
+
+/* --- Graficul de bani de sub tabelul KPI (o coloana = o ruta) --- */
+
+/* Aceleasi culori ca in business.css: cost portocaliu, incasare albastru.
+   Profitul poarta semnul lui prin verde/rosu, ca la cifrele din tabel. */
+.alg__grafic {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 8px;
+  height: 120px;
+  padding: 0 4px;
+}
+
+.alg__grafic-celula {
+  padding-bottom: 6px;
+  vertical-align: bottom;
+}
+
+/* Linia lui zero: bara de profit creste in sus de la ea si coboara sub ea. */
+.alg__zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--text-muted);
+  opacity: 0.5;
+}
+
+.alg__slot {
+  position: relative;
+  width: 22px;
+  height: 100%;
+}
+
+.alg__bara {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+}
+
+/* Bara de sub zero e rotunjita in jos, fiindca acolo e capatul ei. */
+.alg__bara--minus {
+  border-radius: 0 0 4px 4px;
+}
+
+.alg__bara--cost {
+  background: #eb6834;
+}
+
+.alg__bara--incasare {
+  background: #2a78d6;
+}
+
+.alg__bara--profit {
+  background: var(--ok);
+}
+
+.alg__bara--profit.alg__bara--minus {
+  background: var(--fail);
+}
+
+/* Sub grafic: spune daca cifrele sunt reale sau simulate. */
+.alg__fel {
+  display: block;
+  margin-top: 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.alg__legenda {
+  display: block;
+  margin-top: 6px;
+  font-weight: 400;
+}
+
+.alg__cheie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.alg__punct {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+
+.alg__punct--cost {
+  background: #eb6834;
+}
+
+.alg__punct--incasare {
+  background: #2a78d6;
+}
+
+.alg__punct--profit {
+  background: var(--ok);
+}
+
+/* Butoanele deciziei de expediere: "Inchide" ramane la stanga, cele doua
+   optiuni la dreapta. Fiecare optiune e propriul formular POST. */
+.form__actions--decizie {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.form__actions--decizie a.btn {
+  margin-right: auto;
 }

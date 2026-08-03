@@ -2,8 +2,15 @@
 
 require __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/ComandaRepository.php';
+// `require_once`: repository-ul il incarca deja, fiindca are nevoie de el la
+// estimarea de profit.
+require_once __DIR__ . '/../backend/OptimizareRuteService.php';
 
 $repo = new ComandaRepository($pdo);
+
+// Pentru estimarea de profit a unei comenzi neexpediate: costul de carburant se
+// socoteste pe ruta pe care ar alege-o algoritmul pentru fiecare produs.
+$optimizare = new OptimizareRuteService($pdo);
 
 $config = [
     'active' => 'comenzi',
@@ -99,6 +106,63 @@ $config = [
             },
         ],
         ['key' => 'Observatii', 'label' => 'Observatii'],
+        ['key' => 'profit', 'label' => 'Profit', 'type' => 'modal', 'modal' => 'profit'],
+    ],
+
+    'rowModals' => [
+        // Decizia de trimitere, luata inainte ca marfa sa plece: butonul apare
+        // doar la comenzile inca deschise. O comanda trimisa sau deja expediata
+        // nu mai are ce decide, deci in dreptul ei nu apare buton.
+        'profit' => [
+            'param' => 'profit',
+            'buttonLabel' => function ($row) use ($repo, $optimizare) {
+                if (!$repo->esteDeschisa($row)) {
+                    return '';
+                }
+
+                return $repo->situatieFinanciara($row, $optimizare)['profit'] < 0
+                    ? 'Neprofitabil'
+                    : 'Profitabil';
+            },
+            'buttonClass' => function ($row) use ($repo, $optimizare) {
+                return $repo->situatieFinanciara($row, $optimizare)['profit'] < 0
+                    ? 'btn--danger-solid'
+                    : 'btn--ghost';
+            },
+            'wide' => true,
+            'title' => function ($row) {
+                return 'Comanda #' . $row['ComandaID'] . ' - ' . $row['ClientNume'];
+            },
+            'body' => function ($row) use ($repo, $optimizare) {
+                $comanda = $row;
+                $repoComenzi = $repo;
+
+                require __DIR__ . '/_decizie_comanda.php';
+            },
+            'footer' => function ($row, $inapoi) use ($repo) {
+                $deschisa = $repo->esteDeschisa($row);
+
+                require __DIR__ . '/_decizie_butoane.php';
+            },
+        ],
+    ],
+
+    // Cele doua optiuni din fereastra de decizie.
+    'rowActions' => [
+        'trimite' => function ($row) use ($repo, $optimizare) {
+            if (!$repo->trimite($row, $optimizare)) {
+                return ['message' => 'Comanda nu mai e deschisa, decizia nu se mai poate lua.', 'state' => 'fail'];
+            }
+
+            return ['message' => 'Comanda a trecut pe "In procesare". Cifrele au fost inregistrate.', 'state' => 'ok'];
+        },
+        'anuleaza' => function ($row) use ($repo) {
+            if (!$repo->anuleaza($row)) {
+                return ['message' => 'Comanda nu mai e deschisa, decizia nu se mai poate lua.', 'state' => 'fail'];
+            }
+
+            return ['message' => 'Comanda a fost anulata. Nu s-a inregistrat nicio cifra financiara.', 'state' => 'ok'];
+        },
     ],
 
     'fields' => [

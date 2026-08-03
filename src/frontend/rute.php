@@ -7,12 +7,7 @@ $repo = new RutaRepository($pdo);
 
 // Tipurile de drum, de la cel mai usor/rapid la cel mai greu/lent.
 // autostrada > dn (drum national) > drum judetean > drum comunal.
-$tipuriStrada = [
-    'autostrada' => 'Autostrada',
-    'dn' => 'Drum national (DN)',
-    'drum judetean' => 'Drum judetean',
-    'drum comunal' => 'Drum comunal',
-];
+$tipuriStrada = RutaRepository::TIPURI_STRADA;
 
 $config = [
     'active' => 'rute',
