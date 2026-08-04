@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-label="Substituent pentru fotografia de portret">
+  <!-- Substituent pana la poza reala. Se inlocuieste cu portret.jpg
+       (4:5, minimum 640x800 px) si se schimba src-ul din index.html. -->
+  <g stroke="#8A93A2" stroke-opacity=".22" stroke-width="1">
+    <path d="M0 100H640M0 200H640M0 300H640M0 400H640M0 500H640M0 600H640M0 700H640"/>
+    <path d="M80 0V800M160 0V800M240 0V800M320 0V800M400 0V800M480 0V800M560 0V800"/>
+  </g>
+  <g fill="none" stroke="#8A93A2" stroke-opacity=".55" stroke-width="6" stroke-linecap="round">
+    <circle cx="320" cy="330" r="112"/>
+    <path d="M150 690c0-102 76-170 170-170s170 68 170 170"/>
+  </g>
+  <text x="320" y="762" text-anchor="middle" font-family="ui-monospace, Consolas, monospace"
+        font-size="21" letter-spacing="3" fill="#8A93A2" fill-opacity=".8">FOTOGRAFIE PORTRET</text>
+</svg>
