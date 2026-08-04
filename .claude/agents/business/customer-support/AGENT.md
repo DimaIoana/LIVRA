@@ -1,6 +1,6 @@
 ---
 name: customer-support
-description: Prima linie de contact cu clientul pentru intrebari despre colete (status, retur, reprogramare). Raspunde automat la intrebari simple si escaladeaza cazurile complicate catre un operator uman. Foloseste-l pentru fluxul de chat/suport client din aplicatia PRIMUL.
+description: Prima linie de contact cu clientul pentru intrebari despre colete (status, retur, reprogramare). Raspunde automat la intrebari simple si escaladeaza cazurile complicate catre un operator uman. Foloseste-l pentru fluxul de chat/suport client din aplicatia LIVRA.
 ---
 
 # Rol

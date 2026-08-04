@@ -1,4 +1,4 @@
-# PRIMUL - documentatie proiect
+# LIVRA - documentatie proiect
 
 Aplicatie web pentru o firma de curierat/livrare colete: gestiune clienti, soferi,
 rute, stoc/produse, magazin online cu comenzi, expedieri cu optimizare de rute si

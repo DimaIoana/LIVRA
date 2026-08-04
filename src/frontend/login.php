@@ -54,14 +54,14 @@ $flash = shop_flash_get();
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PRIMUL - Login client</title>
+  <title>LIVRA - Login client</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
 </head>
 <body>
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="magazin.php">PRIMUL</a>
+    <a class="logo" href="magazin.php">LIVRA</a>
     <span class="header__subtitle">Login client</span>
   </div>
 </header>

@@ -14,7 +14,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require __DIR__ . '/../database/db_connection.php';
+// Back office: doar pentru utilizatorii autentificati (vezi _auth.php).
+require __DIR__ . '/_auth.php';
+cere_admin();
+
+require_once __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/OptimizareRuteService.php';
 
 $service = new OptimizareRuteService($pdo);
@@ -142,20 +146,26 @@ $navLinks = [
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PRIMUL - Expediere comanda</title>
+  <title>LIVRA - Expediere comanda</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
 </head>
 <body>
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="../../index.php">LIVRA</a>
     <span class="header__subtitle">Expediere comanda (optimizare rute)</span>
     <nav class="nav">
       <?php foreach ($navLinks as $key => $link): ?>
         <a class="nav__link<?= $key === 'comenzi' ? ' nav__link--active' : '' ?>" href="<?= h($link[0]) ?>"><?= h($link[1]) ?></a>
       <?php endforeach; ?>
     </nav>
+    <?php if ($adminConectat = admin_logat()): ?>
+      <span class="header__user">
+        <strong><?= h($adminConectat['Nume']) ?></strong>
+        <a class="header__logout" href="admin_login.php?logout=1">Iesi</a>
+      </span>
+    <?php endif; ?>
   </div>
 </header>
 

@@ -84,7 +84,7 @@ class CarburantService
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 8,
             CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_USERAGENT => 'anthropic-ai PRIMUL/1.0',
+            CURLOPT_USERAGENT => 'anthropic-ai LIVRA/1.0',
         ]);
         $body = curl_exec($ch);
         $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

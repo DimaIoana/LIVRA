@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * Login de back office: user + parola criptata (tabela `users`).
+ *
+ * Toate paginile de administrare (index, clienti, comenzi, expedieri, soferi,
+ * rute, produse, business, laborator) trec pe aici. Parola nu se tine nicaieri
+ * in clar - se compara hash-uri, vezi src/backend/UserRepository.php.
+ *
+ * Login-ul de client (magazin) e separat, in `login.php`.
+ */
+
+require __DIR__ . '/_auth.php';
+
+/** Scapa text pentru HTML. */
+function h($value)
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+// Delogare.
+if (isset($_GET['logout'])) {
+    admin_logout();
+    admin_flash_set('Te-ai delogat.', 'ok');
+    header('Location: admin_login.php');
+    exit;
+}
+
+// Deja conectat -> nu are ce cauta pe pagina de login.
+if (admin_logat()) {
+    header('Location: ' . admin_base_url() . '/index.php');
+    exit;
+}
+
+$eroare = '';
+$login = '';
+$blocatSecunde = admin_blocat_secunde();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $login = trim((string) ($_POST['login'] ?? ''));
+    $parola = (string) ($_POST['parola'] ?? '');
+
+    if ($blocatSecunde > 0) {
+        $eroare = 'Prea multe incercari. Mai asteapta ' . $blocatSecunde . ' secunde.';
+    } else {
+        $user = $utilizatori->autentifica($login, $parola);
+
+        if ($user === null) {
+            // Acelasi mesaj si la user gresit, si la parola gresita: altfel am
+            // spune celui care ghiceste care login-uri exista.
+            admin_inregistreaza_esec();
+            $eroare = 'User sau parola gresita.';
+            $blocatSecunde = admin_blocat_secunde();
+        } else {
+            admin_reseteaza_incercari();
+            admin_login($user);
+            header('Location: ' . admin_retur_url());
+            exit;
+        }
+    }
+}
+
+$flash = admin_flash_get();
+
+// Fara niciun cont in baza nu se poate intra deloc - spunem cum se creeaza unul.
+$faraConturi = $utilizatori->numarConturi() === 0;
+
+?>
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIVRA - Panou administrare</title>
+  <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+  <link rel="stylesheet" href="css/auth.css?v=<?= filemtime(__DIR__ . '/css/auth.css') ?>">
+</head>
+<body class="auth-body">
+
+<main class="auth">
+
+  <!-- Panoul de prezentare: firma de curierat -->
+  <section class="auth__brand">
+    <div class="auth__brand-top">
+      <img class="auth__logo" src="img/logo-livra.png" width="355" height="260"
+           alt="LIVRA - livram incredere">
+      <p class="auth__tagline">Curierat rapid, rute optimizate, clienti multumiti.</p>
+    </div>
+
+    <div class="auth__scena" aria-hidden="true">
+      <span class="auth__duba">🚚</span>
+      <span class="auth__drum"></span>
+      <span class="auth__colete">📦 📦 📦</span>
+    </div>
+
+    <p class="auth__autor">Proiect realizat de Dima Ioana</p>
+  </section>
+
+  <!-- Formularul de autentificare -->
+  <section class="auth__panou">
+    <div class="auth__form-box">
+
+      <h1 class="auth__titlu">Panou administrare</h1>
+      <p class="auth__subtitlu">Autentifica-te ca sa administrezi comenzile, coletele si rutele.</p>
+
+      <?php if ($flash): ?>
+        <div class="alert alert--<?= h($flash['state']) ?>"><?= h($flash['message']) ?></div>
+      <?php endif; ?>
+
+      <?php if ($faraConturi): ?>
+        <div class="alert alert--fail">
+          Nu exista niciun cont in tabela <code>users</code>. Creeaza unul cu:
+          <code>php tools/hash_parola.php</code>
+        </div>
+      <?php endif; ?>
+
+      <form class="form" method="post" action="admin_login.php">
+        <?php if ($eroare !== ''): ?>
+          <p class="form__error"><?= h($eroare) ?></p>
+        <?php endif; ?>
+
+        <label class="field">
+          <span class="field__label">User</span>
+          <input class="input" type="text" name="login" value="<?= h($login) ?>"
+                 autocomplete="username" autofocus required maxlength="50" placeholder="ex: ioana">
+        </label>
+
+        <label class="field">
+          <span class="field__label">Parola</span>
+          <input class="input" type="password" name="parola"
+                 autocomplete="current-password" required placeholder="••••••••">
+        </label>
+
+        <div class="form__actions">
+          <button class="btn auth__btn" type="submit" <?= $blocatSecunde > 0 ? 'disabled' : '' ?>>
+            Intra in cont
+          </button>
+        </div>
+      </form>
+
+      <p class="auth__nota">
+        Parola e criptata in baza de date (bcrypt) - nu poate fi citita de nimeni,
+        nici din phpMyAdmin.
+      </p>
+
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

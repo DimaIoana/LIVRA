@@ -1,6 +1,12 @@
 <?php
 
-require __DIR__ . '/src/database/db_connection.php';
+// Back office: doar pentru utilizatorii autentificati (vezi src/frontend/_auth.php).
+require __DIR__ . '/src/frontend/_auth.php';
+cere_admin();
+
+$admin = admin_logat();
+
+require_once __DIR__ . '/src/database/db_connection.php';
 require __DIR__ . '/src/backend/ComandaRepository.php';
 
 $versiune_mysql = $pdo->query('SELECT VERSION()')->fetchColumn();
@@ -109,15 +115,19 @@ $sectiuni = [
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PRIMUL</title>
+    <title>LIVRA</title>
     <link rel="stylesheet" href="src/frontend/css/app.css?v=<?= filemtime(__DIR__ . '/src/frontend/css/app.css') ?>">
     <link rel="stylesheet" href="src/frontend/css/index.css?v=<?= filemtime(__DIR__ . '/src/frontend/css/index.css') ?>">
 </head>
 <body>
     <header class="header">
         <div class="header__inner">
-            <span class="logo">PRIMUL</span>
+            <span class="logo">LIVRA</span>
             <span class="header__subtitle">Gestiune comenzi si livrari</span>
+            <span class="header__user header__user--singur">
+                Conectat: <strong><?= htmlspecialchars($admin['Nume']) ?></strong>
+                <a class="header__logout" href="src/frontend/admin_login.php?logout=1">Iesi</a>
+            </span>
         </div>
     </header>
 
@@ -149,7 +159,8 @@ $sectiuni = [
         </div>
 
         <div class="cta">
-            <a class="btn cta__btn" href="src/frontend/login.php">Login client &rarr;</a>
+            <!-- Magazinul se deschide in tab nou: back office-ul ramane deschis in spate. -->
+            <a class="btn cta__btn" href="src/frontend/login.php" target="_blank" rel="noopener">Login client &rarr;</a>
             <span class="cta__text">Clientul se logheaza (isi alege numele) ca sa cumpere din magazin.</span>
         </div>
 

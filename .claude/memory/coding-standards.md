@@ -1,4 +1,4 @@
-# Standarde de cod - PRIMUL
+# Standarde de cod - LIVRA
 
 ## PHP
 - PSR-12 pentru formatare (indentare 4 spatii, acolade pe linie noua pentru functii/clase).

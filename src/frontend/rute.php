@@ -1,6 +1,10 @@
 <?php
 
-require __DIR__ . '/../database/db_connection.php';
+// Back office: doar pentru utilizatorii autentificati (vezi _auth.php).
+require __DIR__ . '/_auth.php';
+cere_admin();
+
+require_once __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/RutaRepository.php';
 
 $repo = new RutaRepository($pdo);

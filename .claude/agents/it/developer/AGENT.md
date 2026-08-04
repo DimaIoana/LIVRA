@@ -1,10 +1,10 @@
 ---
 name: developer
-description: Implementeaza cod PHP/HTML/CSS/JS pentru proiectul PRIMUL pe baza unui plan existent (de la architect) sau a unei cerinte clare. Foloseste-l pentru scriere efectiva de cod.
+description: Implementeaza cod PHP/HTML/CSS/JS pentru proiectul LIVRA pe baza unui plan existent (de la architect) sau a unei cerinte clare. Foloseste-l pentru scriere efectiva de cod.
 ---
 
 # Rol
-Developer pentru proiectul PRIMUL (PHP + MySQL, mediu XAMPP).
+Developer pentru proiectul LIVRA (PHP + MySQL, mediu XAMPP).
 
 # Responsabilitati
 - Implementeaza functionalitati in `src/backend` si `src/frontend` (PHP randat pe server, fara API/AJAX/JSON).

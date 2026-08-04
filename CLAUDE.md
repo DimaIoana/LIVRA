@@ -1,4 +1,4 @@
-# PRIMUL
+# LIVRA
 
 ## Descriere generala
 Proiect web dezvoltat local pe XAMPP, cu backend PHP, frontend HTML/CSS/JS si baza de date MySQL. Proiectul gestioneaza comenzi si livrare de produse prin curieri si obiectivul este sa se optimizeze prin aceasta aplicatie calitate, viteza  de livrare si satisfacerea clientului.

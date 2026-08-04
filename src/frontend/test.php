@@ -1,5 +1,9 @@
 <?php
 
+// Back office: doar pentru utilizatorii autentificati (vezi _auth.php).
+require __DIR__ . '/_auth.php';
+cere_admin();
+
 require __DIR__ . '/../backend/SystemCheck.php';
 
 $checker = new SystemCheck(__DIR__ . '/../database/db_connection.php');
@@ -34,20 +38,26 @@ $navLinks = [
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PRIMUL - Pagina de test</title>
+  <title>LIVRA - Pagina de test</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
 </head>
 <body>
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="../../index.php">LIVRA</a>
     <span class="header__subtitle">Pagina de test &amp; diagnostic</span>
     <nav class="nav">
       <?php foreach ($navLinks as $link): ?>
         <a class="nav__link" href="<?= h($link[0]) ?>"><?= h($link[1]) ?></a>
       <?php endforeach; ?>
     </nav>
+    <?php if ($adminConectat = admin_logat()): ?>
+      <span class="header__user">
+        <strong><?= h($adminConectat['Nume']) ?></strong>
+        <a class="header__logout" href="admin_login.php?logout=1">Iesi</a>
+      </span>
+    <?php endif; ?>
   </div>
 </header>
 

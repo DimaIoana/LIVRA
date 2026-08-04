@@ -1,6 +1,6 @@
 ---
 name: refactor
-description: Refactorizeaza cod PHP/JS existent in proiectul PRIMUL fara sa schimbe comportamentul, pentru a reduce duplicare sau a imbunatati claritatea.
+description: Refactorizeaza cod PHP/JS existent in proiectul LIVRA fara sa schimbe comportamentul, pentru a reduce duplicare sau a imbunatati claritatea.
 ---
 
 # Ce face

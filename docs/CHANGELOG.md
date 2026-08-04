@@ -1,6 +1,43 @@
-# Log de proiect - PRIMUL
+# Log de proiect - LIVRA
 
 Jurnal cronologic al lucrului pe proiect. Cele mai recente sus.
+
+## 2026-08-04 - Asistent pentru clienti: adaugat si scos
+- A existat cateva ore un asistent conversational pentru clienti (bula de chat pe
+  paginile de front office, model Claude Haiku, baza de cunostinte proprie).
+  **Scos la cererea userului in aceeasi zi** - nu mai era necesar.
+- Sterse: `src/frontend/asistent.php`, `_asistent.php`, `_chat_widget.php`,
+  `src/backend/AsistentClientService.php`, `config_ai.example.php`,
+  `tools/test_asistent.php`, `docs/baza_cunostinte_client.md`, stilurile de chat
+  din `app.css` si linkurile din meniul de magazin. Nu au ramas urme in cod.
+
+## 2026-08-04 - Numele firmei: LIVRA, cu logo
+- "PRIMUL" a devenit **LIVRA** peste tot in aplicatie si in documentatie. Caile
+  de pe disc raman `C:\xampp\htdocs\CLAUDE\PRIMUL` (doar numele afisat s-a
+  schimbat, nu si folderul).
+- Logo-ul primit (`src/backend/imagini/logo livra.png`, 1536x1024) a fost decupat
+  in doua variante mici, in `src/frontend/img/`:
+  - `logo-livra-mark.png` - doar marca (coletul cu liniile de viteza), pusa in
+    `.logo::before` din `app.css`. Fiind pe clasa comuna, apare automat in
+    antetul tuturor paginilor, langa textul LIVRA;
+  - `logo-livra.png` - logo-ul complet cu slogan, pe pagina de login.
+- Decupajul s-a facut cu System.Drawing din PowerShell (GD nu e activat in
+  php.ini), dupa marginile reale ale desenului, calculate din pixeli.
+
+## 2026-08-04 - Login de back office cu parola criptata
+- Pagina noua `src/frontend/admin_login.php`: ecran impartit, cu panoul firmei in
+  stanga (logo, cifre din baza: curieri, rute, orase) si formularul in dreapta.
+- Parolele nu se mai tin in clar: `users.parola` a devenit hash bcrypt
+  (migrarea `025_users_parola_criptata.sql`), verificat cu `password_verify()`
+  in `src/backend/UserRepository.php`. Nici din phpMyAdmin nu se mai pot citi.
+- Toate paginile de back office (index, clienti, comenzi, expedieri, soferi,
+  rute, produse, business, laborator, test) incep cu `cere_admin()` din
+  `_auth.php` si arata cine e conectat, cu buton de iesire. Magazinul si
+  urmarirea coletului au ramas publice.
+- Aparari: acelasi mesaj la user gresit si la parola gresita, pauza de 60 s dupa
+  5 incercari, `session_regenerate_id` la login, sesiune expirata dupa 2 h de
+  inactivitate si intoarcere doar pe cai din proiect (fara redirect in afara).
+- Conturi noi / parole schimbate: `php tools/hash_parola.php`.
 
 ## 2026-08-01 - Optimizat vs neoptimizat: doua grafice de bani in laborator
 - Sectiune noua in `laborator_rute.php`, **"Performanta financiara: cu si fara

@@ -1,4 +1,4 @@
-# Context proiect PRIMUL
+# Context proiect LIVRA
 
 ## Ce este
 Aplicatie web (XAMPP local, PHP + MySQL + HTML/CSS) pentru o firma de curierat:

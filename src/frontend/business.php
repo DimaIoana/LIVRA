@@ -20,7 +20,11 @@
  * exista si tabelul cu cifrele, ca valorile sa nu depinda numai de culoare.
  */
 
-require __DIR__ . '/../database/db_connection.php';
+// Back office: doar pentru utilizatorii autentificati (vezi _auth.php).
+require __DIR__ . '/_auth.php';
+cere_admin();
+
+require_once __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/BusinessRepository.php';
 require_once __DIR__ . '/_grafic_scara.php';
 
@@ -620,7 +624,7 @@ $navLinks = [
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>PRIMUL - Business Intelligence si analiza de date</title>
+  <title>LIVRA - Business Intelligence si analiza de date</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
   <link rel="stylesheet" href="css/business.css?v=<?= filemtime(__DIR__ . '/css/business.css') ?>">
 </head>
@@ -628,13 +632,19 @@ $navLinks = [
 
 <header class="header">
   <div class="header__inner">
-    <a class="logo" href="../../index.php">PRIMUL</a>
+    <a class="logo" href="../../index.php">LIVRA</a>
     <span class="header__subtitle">Business Intelligence si analiza de date</span>
     <nav class="nav">
       <?php foreach ($navLinks as $key => $link): ?>
         <a class="nav__link<?= $key === 'business' ? ' nav__link--active' : '' ?>" href="<?= h($link[0]) ?>"><?= h($link[1]) ?></a>
       <?php endforeach; ?>
     </nav>
+    <?php if ($adminConectat = admin_logat()): ?>
+      <span class="header__user">
+        <strong><?= h($adminConectat['Nume']) ?></strong>
+        <a class="header__logout" href="admin_login.php?logout=1">Iesi</a>
+      </span>
+    <?php endif; ?>
   </div>
 </header>
 

@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Revizuieste codul PHP/JS modificat in proiectul PRIMUL pentru bug-uri de corectitudine si probleme de securitate (SQL injection, XSS) inainte de commit.
+description: Revizuieste codul PHP/JS modificat in proiectul LIVRA pentru bug-uri de corectitudine si probleme de securitate (SQL injection, XSS) inainte de commit.
 ---
 
 # Ce face

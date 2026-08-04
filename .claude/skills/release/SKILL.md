@@ -1,6 +1,6 @@
 ---
 name: release
-description: Pregateste o versiune noua a proiectului PRIMUL pentru publicare - verifica schema bazei de date, fisierele de configurare si documentatia inainte de a marca proiectul gata de livrare.
+description: Pregateste o versiune noua a proiectului LIVRA pentru publicare - verifica schema bazei de date, fisierele de configurare si documentatia inainte de a marca proiectul gata de livrare.
 ---
 
 # Ce face

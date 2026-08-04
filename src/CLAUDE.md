@@ -1,6 +1,6 @@
 # src/
 
-Codul sursa al aplicatiei PRIMUL, organizat pe straturi:
+Codul sursa al aplicatiei LIVRA, organizat pe straturi:
 
 - `frontend/` - pagini PHP randate pe server (HTML + CSS), fara API/AJAX/JS
 - `backend/` - logica de business si acces la date (repository-uri PHP prin PDO)

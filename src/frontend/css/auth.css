@@ -1,0 +1,217 @@
+/* Pagina de autentificare pentru back office (admin_login.php).
+   Ecran impartit: stanga = prezentarea firmei de curierat, dreapta = formularul.
+   Se bazeaza pe variabilele si pe .input/.btn/.field/.alert din app.css. */
+
+.auth-body {
+  min-height: 100vh;
+}
+
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+}
+
+/* --- Panoul de brand (stanga) --- */
+
+.auth__brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 48px 52px;
+  color: #fff;
+  background:
+    radial-gradient(1200px 480px at 12% 8%, rgba(255, 255, 255, 0.16), transparent 60%),
+    linear-gradient(150deg, #2440d8 0%, #3355ff 46%, #1b2a75 100%);
+}
+
+/* Colete stilizate in fundal, ca o textura. */
+.auth__brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at 30% 30%, #000 0%, transparent 75%);
+  pointer-events: none;
+}
+
+.auth__brand-top,
+.auth__scena,
+.auth__autor {
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo-ul complet (marca + numele + sloganul), pe o placa alba: fundalul
+   imaginii e alb, deci fara placa ar iesi un dreptunghi ciudat peste albastru. */
+.auth__logo {
+  display: block;
+  width: 176px;
+  height: auto;
+  padding: 12px 18px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(8, 16, 55, 0.3);
+}
+
+.auth__tagline {
+  margin: 14px 0 0;
+  max-width: 22ch;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Mica scena: duba care trece pe drum, pur CSS. */
+.auth__scena {
+  position: relative;
+  height: 92px;
+}
+
+.auth__drum {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22px;
+  height: 3px;
+  border-radius: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.55) 0 22px,
+    transparent 22px 44px
+  );
+}
+
+.auth__duba {
+  position: absolute;
+  bottom: 26px;
+  font-size: 40px;
+  animation: auth-livrare 9s linear infinite;
+}
+
+.auth__colete {
+  position: absolute;
+  right: 4px;
+  bottom: 26px;
+  font-size: 20px;
+  letter-spacing: 4px;
+  opacity: 0.75;
+}
+
+/* Duba merge de la dreapta la stanga, in sensul in care e desenat emoji-ul. */
+@keyframes auth-livrare {
+  0% { left: 88%; }
+  100% { left: -12%; }
+}
+
+/* Cine prefera mai putina miscare vede duba oprita pe drum. */
+@media (prefers-reduced-motion: reduce) {
+  .auth__duba {
+    animation: none;
+    left: 8%;
+  }
+}
+
+.auth__autor {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* --- Panoul cu formularul (dreapta) --- */
+
+.auth__panou {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  background: var(--bg);
+}
+
+.auth__form-box {
+  width: 100%;
+  max-width: 400px;
+  padding: 34px 32px 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth__titlu {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.auth__subtitlu {
+  margin: 6px 0 22px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.auth__form-box .alert {
+  margin-bottom: 16px;
+}
+
+.auth__btn {
+  width: 100%;
+  padding: 13px 20px;
+  font-size: 15px;
+}
+
+.auth__nota {
+  margin: 18px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* --- Ecrane mici: panoul de brand devine antet, formularul trece dedesubt --- */
+
+@media (max-width: 900px) {
+  .auth {
+    grid-template-columns: 1fr;
+  }
+
+  .auth__brand {
+    gap: 22px;
+    padding: 32px 26px;
+  }
+
+  .auth__tagline {
+    font-size: 22px;
+    max-width: none;
+  }
+
+  .auth__scena {
+    height: 66px;
+  }
+
+  .auth__panou {
+    padding: 28px 20px 48px;
+  }
+
+  .auth__form-box {
+    box-shadow: var(--shadow);
+  }
+}
+
+@media (max-width: 560px) {
+  .auth__autor {
+    font-size: 12px;
+    letter-spacing: 0.6px;
+  }
+}

@@ -1,4 +1,4 @@
-# Conventii - PRIMUL
+# Conventii - LIVRA
 
 ## Nume de fisiere
 - PHP: `snake_case.php` (ex: `user_login.php`)
