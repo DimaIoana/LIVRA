@@ -3,58 +3,24 @@
 require_once __DIR__ . '/BaseRepository.php';
 
 /**
- * Acces la date pentru tabela `inventory`.
+ * Acces la date pentru tabela `inventory` - stocul.
  *
  * Atentie: tabela e un istoric lunar de stoc, nu un catalog. Acelasi
  * Product_ID apare o data pentru fiecare luna (coloana `Date`).
+ *
+ * Produsul in sine (nume, categorie, pret de vanzare, poza) sta in `produse`,
+ * catalogul; aici e doar codul lui, ca legatura (cheie straina). Deci nu se
+ * poate inregistra stoc pentru un produs care nu e in catalog, iar numele unui
+ * produs se schimba intr-un singur loc.
+ *
+ * Listarea face JOIN cu catalogul, ca in tabel sa se vada tot randul (cod, nume,
+ * categorie, pret), dar scrisul atinge numai coloanele de stoc.
  */
 class InventoryRepository extends BaseRepository
 {
-    /** Prefixul codului de produs; dupa el urmeaza numarul, cu CIFRE_COD cifre. */
-    const PREFIX_COD = 'PRD-';
-    const CIFRE_COD = 4;
-
     protected function table()
     {
         return 'inventory';
-    }
-
-    /**
-     * Urmatorul cod de produs liber: PRD-0001, PRD-0002, ... Se ia numarul cel
-     * mai mare folosit si se adauga unu, deci codurile cresc mereu si nu se
-     * refolosesc nici dupa stergerea unui produs.
-     *
-     * Codurile care nu respecta formatul (daca a scris cineva ceva de mana) sunt
-     * ignorate la numarat, dar raman in tabela; ele nu pot bloca generarea.
-     */
-    public function codNou()
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT MAX(CAST(SUBSTRING(Product_ID, :start) AS UNSIGNED))
-             FROM inventory
-             WHERE Product_ID LIKE :prefix'
-        );
-        $stmt->execute([
-            'start' => strlen(self::PREFIX_COD) + 1,
-            'prefix' => self::PREFIX_COD . '%',
-        ]);
-
-        $ultim = (int) $stmt->fetchColumn();
-
-        return self::PREFIX_COD . str_pad($ultim + 1, self::CIFRE_COD, '0', STR_PAD_LEFT);
-    }
-
-    /** Numele produsului care poarta deja codul asta, sau null daca e liber. */
-    private function numeExistent($cod)
-    {
-        $stmt = $this->pdo->prepare(
-            'SELECT Product_Name FROM inventory WHERE Product_ID = :cod LIMIT 1'
-        );
-        $stmt->execute(['cod' => $cod]);
-
-        $nume = $stmt->fetchColumn();
-
-        return $nume === false ? null : (string) $nume;
     }
 
     protected function primaryKey()
@@ -62,60 +28,71 @@ class InventoryRepository extends BaseRepository
         return 'InventoryID';
     }
 
+    /** Doar coloanele de stoc: astea se scriu la adaugare/editare. */
     protected function columns()
     {
-        return ['Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Cost_Unitar', 'Date', 'poze', 'depozit'];
+        return ['Product_ID', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Cost_Unitar', 'Date', 'depozit'];
+    }
+
+    /**
+     * Listarea aduce si datele produsului din catalog. `produse.Product_ID` nu
+     * se selecteaza: e acelasi cu cel din inventory, iar daca ar aparea de doua
+     * ori, sortarea dupa Product_ID ar deveni ambigua.
+     */
+    protected function selectFrom()
+    {
+        // Fara alias de tabela: BaseRepository::getById filtreaza pe
+        // `inventory`.`InventoryID`, deci tabela trebuie sa-si pastreze numele.
+        return 'SELECT `inventory`.`InventoryID`, `inventory`.`Product_ID`,
+                       `inventory`.`Stock_Level`, `inventory`.`Reorder_Point`,
+                       `inventory`.`Monthly_Sales`, `inventory`.`Cost_Unitar`,
+                       `inventory`.`Date`, `inventory`.`depozit`,
+                       `produse`.`Product_Name`, `produse`.`Category`,
+                       `produse`.`Unit_Cost`, `produse`.`poze`
+                  FROM `inventory`
+                  JOIN `produse` ON `produse`.`Product_ID` = `inventory`.`Product_ID`';
     }
 
     protected function sortableColumns()
     {
-        return ['InventoryID', 'Product_ID', 'Product_Name', 'Category', 'Stock_Level', 'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Cost_Unitar', 'Date'];
+        // Nume simple: sortarea se face pe coloanele rezultatului, care sunt unice.
+        return ['InventoryID', 'Product_ID', 'Product_Name', 'Category', 'Stock_Level',
+                'Reorder_Point', 'Monthly_Sales', 'Unit_Cost', 'Cost_Unitar', 'Date'];
     }
 
     protected function searchableColumns()
     {
-        return ['Product_ID', 'Product_Name', 'Category'];
+        // Aici numele trebuie calificate: WHERE nu vede numele din SELECT, iar
+        // Product_ID exista in ambele tabele.
+        return ['inventory.Product_ID', 'produse.Product_Name', 'produse.Category'];
     }
 
     public function validate(array $input)
     {
         $errors = [];
 
-        $product_name = $this->validText($errors, $input, 'Product_Name', 'Numele produsului', 100);
-
-        // Codul: lasat gol inseamna "produs nou", deci se genereaza urmatorul.
-        // Formularul il vine oricum precompletat; golul e plasa de siguranta.
+        // Produsul se alege din catalog, deci se verifica doar ca respectivul cod
+        // chiar exista acolo. Numele, categoria si pretul nu se mai scriu aici.
         $product_id = trim((string) ($input['Product_ID'] ?? ''));
 
         if ($product_id === '') {
-            $product_id = $this->codNou();
+            $errors[] = 'Alege produsul din catalog.';
         } else {
-            $product_id = $this->validText($errors, $input, 'Product_ID', 'Codul produsului', 10);
-        }
+            $stmt = $this->pdo->prepare('SELECT 1 FROM produse WHERE Product_ID = :cod');
+            $stmt->execute(['cod' => $product_id]);
 
-        // La adaugare (nu la editare), un cod deja folosit inseamna ca se adauga
-        // o luna noua la un produs existent - deci numele trebuie sa fie al lui.
-        // Un nume diferit e aproape sigur o greseala: doua produse ar ajunge sa
-        // imparta acelasi cod si n-ar mai putea fi deosebite nicaieri.
-        $esteAdaugare = trim((string) ($input[$this->primaryKey()] ?? '')) === '';
-
-        if ($esteAdaugare && !$errors && $product_id !== '') {
-            $numeExistent = $this->numeExistent($product_id);
-
-            if ($numeExistent !== null && mb_strtolower($numeExistent) !== mb_strtolower($product_name)) {
-                $errors[] = 'Codul "' . $product_id . '" este deja al produsului "' . $numeExistent
-                    . '". Lasa campul gol ca sa primesti un cod nou (' . $this->codNou()
-                    . '), sau scrie acelasi nume daca adaugi o luna noua la acest produs.';
+            if ($stmt->fetchColumn() === false) {
+                $errors[] = 'Produsul "' . $product_id . '" nu exista in catalog. '
+                    . 'Adauga-l intai in Catalog de produse.';
             }
         }
-        $category = $this->validText($errors, $input, 'Category', 'Categoria', 50);
 
         $stock_level = $this->validInt($errors, $input, 'Stock_Level', 'Stocul', 0);
         $reorder_point = $this->validInt($errors, $input, 'Reorder_Point', 'Pragul de recomanda', 0);
         $monthly_sales = $this->validInt($errors, $input, 'Monthly_Sales', 'Vanzarile lunare', 0);
-        // Unit_Cost = pretul unitar afisat clientului; Cost_Unitar = costul de
-        // achizitie pe firma (optional, se poate completa mai tarziu).
-        $unit_cost = $this->validDecimal($errors, $input, 'Unit_Cost', 'Pretul unitar', 0);
+
+        // Cost_Unitar = costul de achizitie pe firma, care chiar difera de la o
+        // luna/depozit la alta, deci ramane pe randul de stoc. Optional.
         $cost_unitar = $this->validDecimal($errors, $input, 'Cost_Unitar', 'Costul unitar', 0, false);
 
         $date = trim((string) ($input['Date'] ?? ''));
@@ -123,13 +100,6 @@ class InventoryRepository extends BaseRepository
             $date = date('Y-m-d');
         } else {
             $date = $this->validDate($errors, $input, 'Date', 'Data');
-        }
-
-        // Poza: numele fisierului deja mutat in folderul `poze/` (setat de
-        // stratul de upload din _crud_page.php). Optionala.
-        $poze = trim((string) ($input['poze'] ?? ''));
-        if (mb_strlen($poze) > 200) {
-            $errors[] = 'Numele pozei poate avea maxim 200 de caractere.';
         }
 
         // Depozitul unde se afla produsul: 1 = Arad, 2 = Braila, 3 = Pitesti.
@@ -145,15 +115,11 @@ class InventoryRepository extends BaseRepository
             'errors' => $errors,
             'data' => [
                 'Product_ID' => $product_id,
-                'Product_Name' => $product_name,
-                'Category' => $category,
                 'Stock_Level' => $stock_level,
                 'Reorder_Point' => $reorder_point,
                 'Monthly_Sales' => $monthly_sales,
-                'Unit_Cost' => $unit_cost,
                 'Cost_Unitar' => $cost_unitar,
                 'Date' => $date,
-                'poze' => $poze === '' ? null : $poze,
                 'depozit' => $depozit,
             ],
         ];

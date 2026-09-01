@@ -101,6 +101,7 @@ foreach ($cos as $code => $qty) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LIVRA - Cos de cumparaturi</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body>
 

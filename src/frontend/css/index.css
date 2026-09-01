@@ -1,13 +1,23 @@
 /* Meniul principal (index.php). Restul stilurilor vin din app.css. */
 
+/* Primele sapte cutii stau pe un singur rand, iar ultimele doua (Business
+   Intelligence si Laboratorul) trec singure pe randul al doilea, la aceeasi
+   latime cu cele de sus - grila are sapte coloane egale. */
 .sectiuni {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 16px;
+}
+
+/* Sub 1200px sapte cutii pe un rand devin ilizibile: revenim la asezarea
+   care isi alege singura cate incap. */
+@media (max-width: 1200px) {
+  .sectiuni { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 }
 
 .sectiune {
   display: block;
+  position: relative;
   padding: 20px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -20,6 +30,30 @@
 .sectiune:hover {
   border-color: var(--brand);
   transform: translateY(-2px);
+}
+
+/* ---- Ultimele doua cutii: Business Intelligence si Laboratorul ---- */
+
+.sectiuni { --portocaliu: #E8720C; }
+
+/* Iconita din coltul din dreapta sus, la nivelul cifrei. Culorile vin din
+   desenul SVG, nu de aici: barele si lichidul au fiecare culoarea lor. */
+.sectiune__icona {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+}
+.sectiune__icona svg { width: 100%; height: 100%; display: block; }
+
+/* La trecerea cu mouse-ul cutia nu se misca: doar chenarul se ingroasa si
+   devine portocaliu. Ingrosarea se face cu umbra interioara, nu marind
+   grosimea chenarului - altfel continutul ar sari cu cativa pixeli. */
+.sectiuni > .sectiune:nth-last-child(-n+2):hover {
+  border-color: var(--portocaliu);
+  box-shadow: inset 0 0 0 2px var(--portocaliu);
+  transform: none;
 }
 
 .sectiune__total {

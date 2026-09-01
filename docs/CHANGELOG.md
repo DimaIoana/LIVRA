@@ -2,6 +2,70 @@
 
 Jurnal cronologic al lucrului pe proiect. Cele mai recente sus.
 
+## 2026-08-10 - Catalogul devine tabela lui: `produse`, cu stocul legat prin cheie straina
+- Pana acum catalogul nu exista ca tabela: `inventory` tinea si produsul (nume,
+  categorie, pret de vanzare, poza) si stocul lunar, deci identitatea produsului
+  era copiata pe fiecare luna - 55 de randuri pentru 19 produse. Puteai schimba
+  numele intr-o luna si nu in alta, iar magazinul trebuia sa ghiceasca produsul
+  din "cel mai recent rand".
+- Migrarea `src/database/026_catalog_produse.sql` desparte cele doua:
+  - `produse` = catalogul, cate un rand pe produs. `ProdusID` e cheia tehnica,
+    `Product_ID` (PRD-0001) e codul de business, **unic**. Contine Product_Name,
+    Category, Unit_Cost (pretul de vanzare) si poza.
+  - `inventory` = stocul, cate un rand pe produs si luna: Stock_Level,
+    Reorder_Point, Monthly_Sales, Cost_Unitar, `Date`, depozit.
+  - Legatura ceruta: **`inventory.Product_ID` = `produse.Product_ID`**, cheie
+    straina reala (ON UPDATE CASCADE, ON DELETE RESTRICT). Nu mai poate exista
+    stoc pentru un produs care nu e in catalog, nici doua produse cu acelasi cod.
+  - `Cost_Unitar` ramane pe stoc: costul de achizitie chiar difera de la o
+    luna/depozit la alta (18 din 19 produse aveau valori diferite), deci e
+    istoric real. `Unit_Cost` era identic pe toate lunile fiecarui produs, deci
+    a fost mutat in catalog.
+  - Colatia lui `inventory.Product_ID` a trecut de la utf8 la utf8mb4, ca sa se
+    potriveasca cu `produse` si cu `comenzi_produse`.
+- Backend: `ProdusRepository` (nou) pentru catalog; `InventoryRepository` scrie
+  numai coloanele de stoc si aduce datele produsului prin JOIN pe catalog;
+  `MagazinRepository` construieste magazinul direct din `produse`, cu stocul luat
+  din ultima luna (produs fara nicio luna de stoc = epuizat, nu dispare).
+  `BaseRepository::quote()` accepta acum "tabela.coloana", pentru JOIN-uri.
+- Frontend: **Catalog de produse** devine pagina CRUD reala - de acolo se adauga,
+  se modifica si se sterg produsele, si tot ce e acolo apare in magazin.
+  **Control de stocks** nu mai editeaza produsul: alegi produsul din catalog
+  dintr-un dropdown si completezi doar cifrele lunii.
+- `_crud_page.php` a primit `$config['intro']`, un carlig optional pentru
+  continut intre bara de cautare si tabel (folosit de cifrele din catalog).
+- Backup inainte de migrare:
+  `src/database/backups/sameday_company_2026-08-10_inainte_de_026.sql`.
+
+## 2026-08-10 - Catalog de produse, "Produse" devine "Control de stocks"
+- `inventory` e istoric lunar de stoc, deci are doua numere diferite (55 de
+  inregistrari pentru 19 produse). Pana acum o singura pagina le amesteca, si de
+  aici impresia ca in magazin lipsesc produse. Acum sunt doua cutii separate:
+  - **Catalog de produse** (`src/frontend/catalog_produse.php`, pagina noua) -
+    cate un rand pe produs, cu pretul unitar de acum: cele 19 produse de vanzare.
+    Doar de citit (produsele se modifica in Control de stocks, adaugandu-le luna
+    noua), cu cautare, filtru pe categorie si sortare pe cod / nume / categorie /
+    pret / stoc. Sortarea se face in PHP, nu in SQL: catalogul are zeci de randuri.
+  - **Control de stocks** (`produse.php`, fostul "Produse") - toate cele 55 de
+    inregistrari produs x luna, cu adaugare/editare/stergere, ca inainte.
+- Cele doua sunt legate in ambele sensuri: din catalog, "Stoc lunar" duce la
+  istoricul produsului (`produse.php?search=<cod>`); din Control de stocks, "In
+  catalog" duce invers. Pe prima pagina cutiile stau una langa alta.
+- Catalogul citeste din `MagazinRepository`, aceeasi sursa din care se construieste
+  magazinul, ca back office-ul si magazinul sa nu poata arata liste diferite.
+- Redenumit in meniul tuturor paginilor: `_crud_page.php`, `business.php`,
+  `expediere_comanda.php`, `laborator_rute.php`, `test.php`.
+
+## 2026-08-10 - Catalogul magazinului: alegerea randului curent
+- `MagazinRepository::currentFrom()` alegea luna (`Date` = MAX(`Date`)), nu randul.
+  Doua efecte, ambele silentioase: un produs cu `Date` necompletat (coloana e
+  nullable, iar un import poate lasa NULL) **dispare complet din magazin**, iar
+  un produs cu doua inregistrari in aceeasi luna apare **de doua ori**.
+- Acum se alege randul: `ORDER BY Date IS NULL, Date DESC, InventoryID DESC LIMIT 1`
+  - lunile completate inaintea celor NULL, cea mai recenta prima, iar la egalitate
+  cea mai nou introdusa. Deci exact un rand pe produs, mereu.
+- Aceeasi regula e folosita si de numaratoarea "sub prag" de pe prima pagina.
+
 ## 2026-08-04 - Asistent pentru clienti: adaugat si scos
 - A existat cateva ore un asistent conversational pentru clienti (bula de chat pe
   paginile de front office, model Claude Haiku, baza de cunostinte proprie).

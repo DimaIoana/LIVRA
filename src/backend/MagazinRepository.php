@@ -1,15 +1,23 @@
 <?php
 
+require_once __DIR__ . '/StocCurent.php';
+
 /**
  * Logica magazinului: catalogul de produse si plasarea comenzilor.
  *
- * Catalogul se construieste din tabela `inventory`, care e un istoric lunar de
- * stoc. Pentru magazin ne intereseaza doar cea mai recenta luna a fiecarui
- * produs (stocul si pretul curent), nu tot istoricul.
+ * Ce vede clientul in magazin e catalogul, adica tabela `produse`: cate un rand
+ * pe produs, cu numele, categoria, pretul de vanzare (`Unit_Cost`) si poza.
+ * Magazinul nu inventeaza si nu filtreaza lista - arata exact catalogul, deci ce
+ * se adauga in "Catalog de produse" din back office apare aici.
  *
- * Pretul afisat clientului este `Unit_Cost` din inventory. Comanda nu modifica
- * stocul (inventory ramane istoric), dar verifica sa nu se comande mai mult
- * decat stocul disponibil.
+ * Singurul lucru luat din alta parte e stocul: el sta in `inventory`, cate un
+ * rand pe produs, luna si depozit, legat de catalog prin `Product_ID`. Stocul de
+ * acum se calculeaza dupa regula unica din StocCurent, aceeasi folosita de
+ * catalogul din back office, ca magazinul si catalogul sa nu poata arata numere
+ * diferite pentru acelasi produs.
+ *
+ * Comanda nu modifica stocul (inventory ramane istoric), dar verifica sa nu se
+ * comande mai mult decat stocul disponibil.
  */
 class MagazinRepository
 {
@@ -21,35 +29,38 @@ class MagazinRepository
     }
 
     /**
-     * Doar randul cel mai recent al fiecarui produs (stocul si pretul curent).
+     * SELECT-ul comun: produsul din catalog plus stocul lui de acum.
+     *
+     * Stocul vine din `inventory` dupa regula unica din StocCurent (suma peste
+     * depozite a ultimului rand din fiecare depozit), aceeasi pe care o
+     * foloseste si catalogul din back office - altfel un produs aflat in trei
+     * depozite ar arata in magazin doar cat e intr-unul.
+     *
+     * Un produs din catalog fara nicio luna de stoc iese cu 0, nu dispare:
+     * exista in catalog, doar ca e epuizat.
      */
-    private function currentFrom()
+    private function selectProdus()
     {
-        return 'FROM inventory i
-                WHERE i.`Date` = (
-                    SELECT MAX(i2.`Date`) FROM inventory i2 WHERE i2.Product_ID = i.Product_ID
-                )';
+        return 'SELECT p.Product_ID, p.Product_Name, p.Category, p.Unit_Cost, p.poze,
+                       COALESCE(s.Stoc_total, 0) AS Stock_Level
+                  FROM produse p
+                  LEFT JOIN (' . StocCurent::subinterogare() . ') s
+                         ON s.Product_ID = p.Product_ID';
     }
 
     /**
-     * Produsele curente, optional filtrate dupa text si/sau categorie.
+     * Produsele din catalog, optional filtrate dupa text si/sau categorie.
      *
-     * @return array[] fiecare cu Product_ID, Product_Name, Category, Stock_Level, Unit_Cost
+     * @return array[] fiecare cu Product_ID, Product_Name, Category, Unit_Cost, poze, Stock_Level
      */
     public function catalog($search = '', $categorie = '')
     {
-        // Poza tine de produs, nu de luna de stoc: o luam de pe cel mai recent
-        // rand al produsului care are poza setata (indiferent de luna curenta).
-        $sql = 'SELECT i.Product_ID, i.Product_Name, i.Category, i.Stock_Level, i.Unit_Cost,
-                (SELECT ip.poze FROM inventory ip
-                  WHERE ip.Product_ID = i.Product_ID AND ip.poze IS NOT NULL AND ip.poze <> \'\'
-                  ORDER BY ip.`Date` DESC LIMIT 1) AS poze '
-            . $this->currentFrom();
+        $sql = $this->selectProdus() . ' WHERE 1';
         $params = [];
 
         $search = trim($search);
         if ($search !== '') {
-            $sql .= ' AND (i.Product_Name LIKE :s1 OR i.Product_ID LIKE :s2 OR i.Category LIKE :s3)';
+            $sql .= ' AND (p.Product_Name LIKE :s1 OR p.Product_ID LIKE :s2 OR p.Category LIKE :s3)';
             $term = '%' . $search . '%';
             $params['s1'] = $term;
             $params['s2'] = $term;
@@ -58,11 +69,11 @@ class MagazinRepository
 
         $categorie = trim($categorie);
         if ($categorie !== '') {
-            $sql .= ' AND i.Category = :cat';
+            $sql .= ' AND p.Category = :cat';
             $params['cat'] = $categorie;
         }
 
-        $sql .= ' ORDER BY i.Category, i.Product_Name';
+        $sql .= ' ORDER BY p.Category, p.Product_Name';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -71,19 +82,19 @@ class MagazinRepository
     }
 
     /**
-     * Categoriile distincte ale produselor curente.
+     * Categoriile distincte din catalog.
      *
      * @return string[]
      */
     public function categorii()
     {
-        $sql = 'SELECT DISTINCT i.Category ' . $this->currentFrom() . ' ORDER BY i.Category';
-
-        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_COLUMN);
+        return $this->pdo
+            ->query('SELECT DISTINCT Category FROM produse ORDER BY Category')
+            ->fetchAll(PDO::FETCH_COLUMN);
     }
 
     /**
-     * Produsele curente pentru un set de coduri, indexate dupa Product_ID.
+     * Produsele din catalog pentru un set de coduri, indexate dupa Product_ID.
      * Folosit la validarea si evaluarea cosului.
      *
      * @param string[] $codes
@@ -108,9 +119,8 @@ class MagazinRepository
             $params[$key] = $code;
         }
 
-        $sql = 'SELECT i.Product_ID, i.Product_Name, i.Category, i.Stock_Level, i.Unit_Cost '
-            . $this->currentFrom()
-            . ' AND i.Product_ID IN (' . implode(', ', $placeholders) . ')';
+        $sql = $this->selectProdus()
+            . ' WHERE p.Product_ID IN (' . implode(', ', $placeholders) . ')';
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);

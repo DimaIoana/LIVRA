@@ -36,6 +36,12 @@
  * Coloana care arata butonul se declara in `columns` cu 'type' => 'modal' si
  * 'modal' => cheia ferestrei.
  *
+ * $config['intro'] (optional): callable($rows): void - tipareste continut intre
+ *   bara de cautare si tabel (ex: un rand de cifre calculate pe ce se afiseaza).
+ *
+ * Un camp din `fields` poate avea 'onlyOnAdd' => true: apare doar in formularul
+ * de adaugare, nu si la editare.
+ *
  * $config['rowActions'] (optional):
  *   [numeActiune => callable($row): array] - actiuni POST proprii paginii, pe un
  *   rand. Se declanseaza cu <input name="action" value="numeActiune"> plus
@@ -401,7 +407,8 @@ $navLinks = [
     'expedieri' => ['expedieri.php', 'Expedieri'],
     'soferi' => ['soferi.php', 'Soferi'],
     'rute' => ['rute.php', 'Rute'],
-    'produse' => ['produse.php', 'Produse'],
+    'catalog' => ['catalog_produse.php', 'Catalog de produse'],
+    'produse' => ['produse.php', 'Control de stocks'],
     'business' => ['business.php', 'Business'],
 ];
 
@@ -422,6 +429,7 @@ foreach ($config['fields'] as $field) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LIVRA - <?= h($config['title']) ?></title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body>
 
@@ -455,6 +463,10 @@ foreach ($config['fields'] as $field) {
 
   <?php if ($flash): ?>
     <div class="alert alert--<?= h($flash['state']) ?>"><?= h($flash['message']) ?></div>
+  <?php endif; ?>
+
+  <?php if (!empty($config['intro']) && is_callable($config['intro'])): ?>
+    <?php $config['intro']($rows); ?>
   <?php endif; ?>
 
   <div class="card">
@@ -572,6 +584,14 @@ foreach ($config['fields'] as $field) {
         <?php endif; ?>
 
         <?php foreach ($config['fields'] as $field): ?>
+          <?php
+            // Campuri care au sens numai la adaugare (ex: stocul de pornire al
+            // unui produs nou). La editare nu se arata, ca sa nu existe doua
+            // locuri din care se schimba aceeasi cifra.
+            if (!empty($field['onlyOnAdd']) && $formMode !== 'add') {
+                continue;
+            }
+          ?>
           <?php $value = $formValues[$field['name']] ?? ''; ?>
           <label class="field">
             <span class="field__label"><?= h($field['label']) ?></span>
@@ -580,7 +600,7 @@ foreach ($config['fields'] as $field) {
               <?php
                 $options = $field['options'] ?? ($config['options'][$field['optionsFrom']] ?? []);
               ?>
-              <select class="input" name="<?= h($field['name']) ?>">
+              <select class="input" name="<?= h($field['name']) ?>" <?= !empty($field['required']) ? 'required' : '' ?>>
                 <?php foreach ($options as $option): ?>
                   <?php
                     if (is_array($option)) {

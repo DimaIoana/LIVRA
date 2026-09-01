@@ -4,13 +4,18 @@
  * Butoanele din josul ferestrei de decizie a unei comenzi (inclus din
  * `comenzi.php`).
  *
- * Cele doua optiuni sunt formulare POST catre aceeasi pagina, tratate de
- * `rowActions` din `_crud_page.php`. O comanda care nu mai e deschisa (trimisa,
- * anulata sau cu linii deja expediate) n-are ce decide, deci ramane doar
- * butonul de inchidere.
+ * Optiunile sunt formulare POST catre aceeasi pagina, tratate de `rowActions`
+ * din `_crud_page.php`.
+ *
+ * Decizia e a utilizatorului, nu a aplicatiei: "Trimite" accepta comanda si cand
+ * estimarea iese pe pierdere, iar o comanda anulata din greseala se poate
+ * redeschide, cat timp n-a plecat nimic din ea.
+ *
+ * "Trimite" e butonul plin (actiunea obisnuita), iar "Anuleaza" e conturat, ca
+ * sa nu fie apasat din greseala in locul celuilalt - stau unul langa altul.
  *
  * Variabile asteptate: $row (comanda), $inapoi (adresa de intoarcere),
- * $deschisa (mai poate fi decisa).
+ * $deschisa (mai poate fi decisa), $redeschidere (e anulata si nimic expediat).
  */
 
 ?>
@@ -21,13 +26,20 @@
     <form method="post" action="<?= h($inapoi) ?>">
       <input type="hidden" name="action" value="anuleaza">
       <input type="hidden" name="ComandaID" value="<?= (int) $row['ComandaID'] ?>">
-      <button class="btn btn--danger-solid" type="submit">Anuleaza</button>
+      <button class="btn btn--ghost btn--danger" type="submit">Anuleaza comanda</button>
     </form>
 
     <form method="post" action="<?= h($inapoi) ?>">
       <input type="hidden" name="action" value="trimite">
       <input type="hidden" name="ComandaID" value="<?= (int) $row['ComandaID'] ?>">
-      <button class="btn" type="submit">Trimite</button>
+      <button class="btn" type="submit">Trimite comanda</button>
+    </form>
+
+  <?php elseif ($redeschidere): ?>
+    <form method="post" action="<?= h($inapoi) ?>">
+      <input type="hidden" name="action" value="redeschide">
+      <input type="hidden" name="ComandaID" value="<?= (int) $row['ComandaID'] ?>">
+      <button class="btn" type="submit">Redeschide comanda</button>
     </form>
   <?php endif; ?>
 </div>

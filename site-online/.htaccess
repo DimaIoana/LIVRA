@@ -1,0 +1,38 @@
+# Radacina domeniului: ioanaanalytics.com
+#
+# Structura reala pe server:
+#     public_html/webpersonal/       site personal (CV)
+#     public_html/webpersonal/app/   aplicatia LIVRA
+#
+# Regula de mai jos face ca ioanaanalytics.com sa afiseze site-ul personal si
+# ioanaanalytics.com/app sa afiseze aplicatia, fara ca "/webpersonal" sa apara
+# in adresa. E o rescriere interna, nu o redirectare: browserul nu afla
+# niciodata de folder.
+
+Options -Indexes
+
+# Cererea catre radacina ("/") nu trece prin rescriere: radacina exista pe disc,
+# deci regula "lasa in pace ce exista" o opreste. De aceea pagina de pornire se
+# indica direct aici, ca fisier index al folderului.
+DirectoryIndex index.html index.php webpersonal/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Cererile care cer explicit webpersonal/... se lasa in pace, altfel
+    # regula de mai jos le-ar prefixa a doua oara (webpersonal/webpersonal/...).
+    RewriteRule ^webpersonal(/|$) - [L]
+
+    # La fel si orice fisier sau folder care chiar exista in radacina.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Tot restul se serveste din webpersonal/, dar adresa ramane curata:
+    #   /                   -> webpersonal/index.php
+    #   /css/style.css      -> webpersonal/css/style.css
+    #   /assets/portret.jpg -> webpersonal/assets/portret.jpg
+    #   /app/               -> webpersonal/app/index.php
+    #   /app/proiect.php    -> webpersonal/app/proiect.php
+    RewriteRule ^(.*)$ webpersonal/$1 [L]
+</IfModule>

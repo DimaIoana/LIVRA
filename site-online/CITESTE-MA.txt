@@ -1,0 +1,200 @@
+SITE PERSONAL + APLICATIA LIVRA - CE SE URCA SI UNDE
+====================================================
+
+Fisierul asta e doar pentru tine. NU il urca pe server.
+
+Folderul asta e copia exacta a ceea ce trebuie sa fie in public_html. Urci o
+singura data, tot, si site-ul e complet: si CV-ul, si aplicatia.
+
+
+STRUCTURA
+---------
+site-online/                        ->  public_html/
+├── .htaccess                          regulile de adresa (vezi mai jos)
+└── webpersonal/                       site-ul personal (CV)
+    ├── index.php                      CV-ul; cere login (vezi pasul 4)
+    ├── _acces.php                     poarta de acces: formularul si verificarea
+    ├── css/style.css
+    ├── assets/                        poza, favicon, CV-ul PDF, imaginea proiectului
+    └── app/                           APLICATIA LIVRA, intreaga
+        ├── index.php                  back office-ul (cere login)
+        ├── proiect.php                prezentarea proiectului (publica)
+        ├── verificare.php             diagnostic; se sterge dupa (vezi pasul 4)
+        ├── src/                       frontend + backend + db_connection.php
+        ├── poze/                      56 de poze de produse
+        ├── cache/                     gol; aici scrie aplicatia pretul si vremea
+        └── .htaccess                  reguli de securitate
+
+Adresele care rezulta:
+
+    ioanaanalytics.com                    -> site personal, CERE LOGIN
+    ioanaanalytics.com/?logout            -> iesire din site-ul personal
+    ioanaanalytics.com/app/               -> aplicatia (duce la login-ul ei)
+    ioanaanalytics.com/app/proiect.php    -> prezentarea proiectului, fara login
+    ioanaanalytics.com/webpersonal/app/   -> aceleasi fisiere, calea reala pe disc
+
+Nu mai exista folder "app1" si nu mai exista pagina-rama cu iframe: aplicatia se
+deschide direct, deci butonul Back al browserului functioneaza normal si poti
+trimite cuiva link catre o pagina anume.
+
+ATENTIE, schimbare importanta: site-ul personal nu mai e public. Cine intra pe
+ioanaanalytics.com primeste un formular de login si nu vede nimic din CV pana nu
+il trece. Datele de acces sunt contul `cvpers` din tabela `users` (aceeasi baza
+ca aplicatia) - le dai tu, cui vrei.
+
+Doua urmari de stiut dinainte:
+  - Google nu mai poate indexa CV-ul, deci site-ul nu va aparea in cautari.
+  - Cine primeste un link direct catre un fisier din assets/ (de exemplu
+    CV-ul PDF) il poate deschide fara login: poarta e pe pagina, nu pe fisiere.
+
+Contul `ioana` (cel afisat pe pagina de login a aplicatiei, ca demonstratie) NU
+are voie la site-ul personal - altfel poarta n-ar tine pe nimeni afara, fiindca
+parola lui e scrisa la vedere acolo. Lista conturilor cu drept de acces e in
+webpersonal/_acces.php, constanta CV_CONTURI_PERMISE.
+
+
+1. CE URCI
+----------
+Copiezi CONTINUTUL acestui folder (nu folderul in sine) in public_html/:
+
+    .htaccess        -> public_html/.htaccess
+    webpersonal/     -> public_html/webpersonal/     (cu tot cu app/ inauntru)
+
+Fisierele care incep cu punct sunt ascunse: in File Manager trebuie bifat
+"Show hidden files", altfel nu vezi .htaccess si crezi ca nu s-a urcat. Sunt
+trei: unul in radacina, unul in webpersonal/app/ si unul in webpersonal/app/cache/.
+Plus doua in webpersonal/app/src/ (backend/ si database/).
+
+
+2. DREPTURI DE SCRIERE (obligatoriu)
+------------------------------------
+Doua foldere trebuie sa fie scrise de PHP, altfel dau eroare:
+
+    webpersonal/app/cache/    755  - pretul carburantului si starea vremii
+    webpersonal/app/poze/     755  - pozele incarcate din pagina Produse
+
+In File Manager: click dreapta pe folder > Permissions > 755.
+Daca gazduirea cere 775 ca sa mearga, incearca intai 755.
+
+
+3. BAZA DE DATE - nu ai nimic de facut
+--------------------------------------
+Datele de conectare sunt deja completate in
+webpersonal/app/src/database/db_connection.php, cu valorile de pe gazduire:
+
+    host:    m0mj.your-database.de
+    baza:    sameday_company
+    user:    ioanaroot
+
+Host-ul NU e 'localhost': baza sta pe un server separat, la your-database.de.
+Cu 'localhost' MySQL cauta un cont 'ioanaroot'@'localhost', care nu exista, si
+raspunde "Access denied".
+
+Baza online e deja incarcata si la zi: are aceleasi 10 tabele ca cea locala si
+exact acelasi numar de randuri in fiecare (clienti 11, comenzi 41,
+comenzi_produse 104, comenzi_financiar 3, expedieri 98, inventory 56,
+produse 20, rute 18, soferi 6, users 1). Nu e nevoie de niciun import.
+
+Daca pe viitor schimbi ceva in structura bazei locale, migrarea din
+src/database/ se ruleaza in phpMyAdmin-ul gazduirii; fisierele .sql nu se urca.
+
+
+4. CE VERIFICI DUPA CE AI URCAT
+-------------------------------
+1. www.ioanaanalytics.com/app/verificare.php - iti spune daca PHP, extensiile,
+   fisierele si conexiunea la baza sunt in regula. Dupa ce e totul verde,
+   STERGI fisierul de pe server: arata detalii despre server si despre baza.
+2. www.ioanaanalytics.com - trebuie sa apara formularul de acces al site-ului
+   personal, fara "/webpersonal" in bara de adrese. Intri cu contul `cvpers` si
+   apare CV-ul; butonul "Iesire" din bara de sus te scoate inapoi.
+3. www.ioanaanalytics.com/app/ - trebuie sa apara pagina de login a back
+   office-ului, iar adresa sa ramana pe /app/..., nu sa sara pe /webpersonal/app/.
+4. Te loghezi (ioana / 1234) si intri pe "Pagina de test" din subsolul paginii
+   de pornire: confirma conexiunea la baza si tabelele.
+5. Pagina Produse: daca se vad pozele, folderul poze/ s-a urcat complet.
+6. Laborator rute: daca pretul carburantului si vremea apar, serverul are voie
+   sa iasa pe internet (vezi punctul 6 de mai jos).
+7. In fereastra privata, www.ioanaanalytics.com/app/proiect.php - trebuie sa se
+   vada prezentarea, nu un formular de login.
+8. Butonul "Acces la proiect" din cardul LIVRA de pe site-ul personal duce la
+   prezentarea de la punctul 7.
+
+Tot fluxul asta a fost verificat local pe o copie a folderului, pusa exact in
+structura de mai sus: poarta site-ului personal (parola gresita, cont respins,
+cont bun, iesire, blocare dupa 5 greseli), login de admin, toate cele 11 pagini
+de back office, login de client, magazin, cos, portal client, si toate
+fisierele CSS/poze. Niciuna nu a dat eroare PHP.
+
+
+5. CUM FUNCTIONEAZA ADRESA
+--------------------------
+.htaccess din radacina rescrie intern cererile catre webpersonal/. E rescriere,
+nu redirectare: browserul nu afla niciodata de folder.
+
+    /                   -> webpersonal/index.php    (prin DirectoryIndex)
+    /css/style.css      -> webpersonal/css/style.css
+    /app/               -> webpersonal/app/index.php
+    /app/proiect.php    -> webpersonal/app/proiect.php
+
+Cererea catre radacina goala nu trece prin rescriere, pentru ca radacina exista
+pe disc si regula "lasa in pace ce exista deja" o opreste. De aceea pagina de
+pornire e indicata separat, in linia DirectoryIndex.
+
+Aplicatia stie sa pastreze adresa scurta: cand trimite utilizatorul la login,
+calculeaza calea din adresa ceruta de browser (/app/...), nu din locul unde sta
+fisierul pe disc (/webpersonal/app/...). Vezi admin_base_url() in
+webpersonal/app/src/frontend/_auth.php.
+
+
+6. LUCRURI CARE POT SA NU MEARGA PE GAZDUIRE
+--------------------------------------------
+Eroare 500 imediat dupa ce urci .htaccess:
+    Gazduirea nu permite directiva "Options". Sterge prima linie
+    (Options -Indexes) din .htaccess si reincarca.
+
+ioanaanalytics.com arata lista de foldere sau 403 in loc de site:
+    mod_rewrite sau DirectoryIndex e restrans. Se cere suportului sa activeze
+    mod_rewrite. Varianta de rezerva, fara nicio regula: muti continutul lui
+    webpersonal/ direct in public_html/ (inclusiv app/) si stergi .htaccess-ul
+    din radacina. Adresele devin ioanaanalytics.com si ioanaanalytics.com/app/,
+    la fel ca inainte.
+
+ioanaanalytics.com/app/ da 404:
+    verifica in File Manager ca exista public_html/webpersonal/app/index.php.
+
+Vremea si pretul carburantului nu apar:
+    aplicatia le cere de la doua site-uri externe prin cURL si unele gazduiri
+    ieftine blocheaza iesirea pe internet din PHP. Nu e grav: are valori de
+    rezerva si merge mai departe.
+
+Alte cerinte de server:
+    PHP 7.4 sau mai nou, cu pdo_mysql si curl. Sunt active implicit peste tot.
+    .htaccess merge pe Apache si LiteSpeed (adica pe gazduirile cu cPanel); pe
+    nginx e ignorat si trebuie cerut suportului sa blocheze /src/ si /cache/.
+
+
+7. PAROLA BAZEI
+---------------
+Parola bazei a circulat prin chat, deci trateaz-o ca fiind cunoscuta. Dupa ce
+site-ul merge, schimb-o din panoul de la your-database.de si actualizeaza linia
+$db_pass din webpersonal/app/src/database/db_connection.php.
+
+Din acelasi motiv webpersonal/app/ e trecut in .gitignore: db_connection.php
+contine parola in clar si nu are ce cauta in istoricul de git.
+
+
+8. CE E INTENTIONAT DIFERIT FATA DE PROIECTUL LOCAL
+---------------------------------------------------
+UN SINGUR fisier nu e identic cu cel local. E singura diferenta, si e voita -
+nu o "corecta":
+
+  webpersonal/app/src/database/db_connection.php
+      local 127.0.0.1 / root / fara parola,
+      aici m0mj.your-database.de / ioanaroot / cu parola.
+
+Restul - tot src/, index.php, proiect.php, _acces.php, poze/, css/, assets/ -
+e copie exacta a proiectului local, verificata cu cmp.
+
+Linkul "Acces la proiect" din CV nu mai e o diferenta: index.php isi da seama
+singur unde e proiectul (langa webpersonal/ local, in webpersonal/app/ pe
+server) si pune calea potrivita.

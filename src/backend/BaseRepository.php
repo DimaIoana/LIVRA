@@ -43,10 +43,14 @@ abstract class BaseRepository
     /**
      * Pune identificatorul intre backtick-uri. Necesar pentru coloane care sunt
      * cuvinte rezervate in MySQL (ex: `Date` in tabela inventory).
+     *
+     * Accepta si forma "tabela.coloana" (`tabela`.`coloana`), de care au nevoie
+     * repository-urile cu JOIN, ca sa poata dezambiguiza o coloana care exista
+     * in ambele tabele (ex: Product_ID in inventory si in produse).
      */
     protected function quote($identifier)
     {
-        return '`' . $identifier . '`';
+        return '`' . implode('`.`', explode('.', $identifier)) . '`';
     }
 
     /**

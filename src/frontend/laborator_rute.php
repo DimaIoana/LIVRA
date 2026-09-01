@@ -143,7 +143,8 @@ $navLinks = [
     'expedieri' => ['expedieri.php', 'Expedieri'],
     'soferi' => ['soferi.php', 'Soferi'],
     'rute' => ['rute.php', 'Rute'],
-    'produse' => ['produse.php', 'Produse'],
+    'catalog' => ['catalog_produse.php', 'Catalog de produse'],
+    'produse' => ['produse.php', 'Control de stocks'],
     'business' => ['business.php', 'Business'],
     'laborator' => ['laborator_rute.php', 'Laborator'],
 ];
@@ -158,6 +159,7 @@ $navLinks = [
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
   <link rel="stylesheet" href="css/business.css?v=<?= filemtime(__DIR__ . '/css/business.css') ?>">
   <link rel="stylesheet" href="css/laborator.css?v=<?= filemtime(__DIR__ . '/css/laborator.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body>
 

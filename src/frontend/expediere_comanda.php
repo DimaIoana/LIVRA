@@ -137,7 +137,8 @@ $navLinks = [
     'expedieri' => ['expedieri.php', 'Expedieri'],
     'soferi' => ['soferi.php', 'Soferi'],
     'rute' => ['rute.php', 'Rute'],
-    'produse' => ['produse.php', 'Produse'],
+    'catalog' => ['catalog_produse.php', 'Catalog de produse'],
+    'produse' => ['produse.php', 'Control de stocks'],
 ];
 
 ?>
@@ -148,6 +149,7 @@ $navLinks = [
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LIVRA - Expediere comanda</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body>
 

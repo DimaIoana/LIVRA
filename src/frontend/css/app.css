@@ -129,6 +129,8 @@ body {
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
+  /* Butoanele scrise ca <a> nu trebuie sa arate ca un link subliniat. */
+  text-decoration: none;
   box-shadow: 0 2px 6px rgba(51, 85, 255, 0.28);
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s, opacity 0.15s;
 }
@@ -355,9 +357,13 @@ body {
   display: none !important;
 }
 
+/* Fereastra acopera tot: antetul e la z-index 20, iar cardurile de produs au
+   inauntru elemente pozitionate (poza-link, checkbox, etichete). Fara z-index
+   aici, toate alea s-ar desena peste fereastra. */
 .modal {
   position: fixed;
   inset: 0;
+  z-index: 100;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -668,11 +674,14 @@ body {
 /* --- Cardul de produs --- */
 .product {
   position: relative;
+  /* Straturile dinauntru (poza-link, checkbox, etichete) raman in card. Fara
+     asta, `position: relative` fara z-index nu face context de stivuire si ele
+     urca in radacina paginii, peste orice fereastra deschisa. */
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--radius-lg);
-  cursor: pointer;
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
@@ -741,17 +750,67 @@ body {
   pointer-events: none;
 }
 
+/* Categoria: pastila sub numele produsului (nu peste banda colorata), deci
+   fundalul e o nuanta deschisa a culorii categoriei, nu alb. */
 .product__cat {
-  position: relative;
-  z-index: 1;
-  padding: 4px 11px;
+  align-self: flex-start;
+  padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: hsl(var(--h), 70%, 94%);
   color: hsl(var(--h), 70%, 30%);
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+
+/* Poza e link catre fereastra cu detaliile produsului. Acopera toata banda,
+   dar sta sub checkbox (z-index 2), ca bifarea sa ramana posibila. */
+.product__zoom {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12px;
+  cursor: zoom-in;
+}
+
+.product__zoom-hint {
+  position: relative;
+  z-index: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: hsl(var(--h), 70%, 30%);
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.product__zoom:hover .product__zoom-hint,
+.product__zoom:focus-visible .product__zoom-hint {
+  opacity: 1;
+}
+
+.product__zoom:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+
+/* Numele, categoria si stocul bifeaza produsul (sunt eticheta checkbox-ului).
+   Casuta de cantitate ramane in afara, ca un click in ea sa nu schimbe bifa. */
+.product__pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.product--out .product__pick {
+  cursor: default;
 }
 
 /* Checkbox de selectare: pastila alba in coltul benzii colorate. */
@@ -1331,4 +1390,391 @@ body {
     padding-left: 0;
     border-left: 0;
   }
+}
+
+/* --- Fereastra cu detaliile produsului (magazin) --- */
+/* Deschisa de click pe poza, prin ?produs=<cod>: poza in stanga, datele in
+   dreapta. Fara JS, deci e o incarcare de pagina obisnuita. */
+.produs-detaliu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 620px) {
+  .produs-detaliu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.produs-detaliu__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, hsl(var(--h), 72%, 58%), hsl(var(--h), 70%, 46%));
+}
+
+/* Produs fara poza: aceeasi glifa ca pe tigla din lista. */
+.produs-detaliu__media::after {
+  content: "📦";
+  font-size: 64px;
+  opacity: 0.3;
+  filter: grayscale(1) brightness(3);
+}
+
+.produs-detaliu__media--photo::after {
+  content: none;
+}
+
+.produs-detaliu__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produs-detaliu__info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.produs-detaliu__nume {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.produs-detaliu__lista {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px 16px;
+  align-items: center;
+}
+
+.produs-detaliu__lista dt {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+}
+
+.produs-detaliu__lista dd {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.produs-detaliu__stoc {
+  color: var(--ok);
+}
+
+.produs-detaliu__stoc--out {
+  color: var(--fail);
+}
+
+.produs-detaliu__inchide {
+  align-self: flex-start;
+}
+
+/* --- Urmarire colet: adaugarea unui AWB si lista coletelor urmarite --- */
+.awb-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.awb-form__input {
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+
+.awb-form__count {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* Coloana centrata in care sta toata pagina de urmarire. */
+.colete {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.colet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 8px 14px;
+  margin-bottom: 8px;
+}
+
+/* Randul: AWB, poza produsului, numele, statusul, pretul, apoi butonul. */
+.colet__cap {
+  display: grid;
+  grid-template-columns: auto 52px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 1000px) {
+  .colet__cap {
+    grid-template-columns: 52px minmax(0, 1fr) auto auto;
+  }
+
+  /* Pe ecran mic AWB-ul trece pe randul lui, pe toata latimea. */
+  .colet__awb {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .colet__cap {
+    grid-template-columns: 84px minmax(0, 1fr);
+  }
+
+  .colet__status,
+  .colet__pret-col,
+  .colet__actiune {
+    grid-column: 1 / -1;
+  }
+
+  .colet__status,
+  .colet__pret-col {
+    text-align: left;
+  }
+
+  .colet__actiune {
+    justify-content: flex-start;
+  }
+}
+
+/* Statusul, intre numele produsului si pret. E informatia dupa care clientul
+   se uita prima data, deci e scris mai mare si ingrosat decat celelalte
+   etichete din aplicatie. */
+.colet__status {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.colet__status .tag {
+  padding: 6px 16px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.colet__awb {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.colet__awb-eticheta {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.colet__awb-numar {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.colet__media {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+/* Produs fara poza: aceeasi glifa ca in magazin. */
+.colet__media::after {
+  content: "📦";
+  font-size: 22px;
+  opacity: 0.45;
+}
+
+.colet__media--photo::after {
+  content: none;
+}
+
+.colet__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.colet__nume {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.colet__pret {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.colet__pret-detaliu {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-muted);
+}
+
+/* Coloana de pret: cifrele aliniate la dreapta, ca sa se compare usor. */
+.colet__pret-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Butonul "Adauga AWB", sau statusul plus "Ascunde" dupa ce a fost adaugat. */
+.colet__actiune {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.colet__detalii {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.awb-goleste {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- Pagina de prezentare a proiectului (proiect.php) --- */
+/* Fundal albastru deschis, doar pe pagina asta: e vitrina proiectului, nu un
+   ecran de lucru. Restul aplicatiei ramane pe fundalul obisnuit. */
+.pagina-proiect {
+  background: #d9e8fa;
+}
+
+.proiect {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.proiect__titlu {
+  margin: 0 0 14px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.proiect__subtitlu {
+  margin: 34px 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+/* Fara max-width: textul se intinde exact cat titlul si cat cele doua cutii de
+   dedesubt, deci toate trei au aceeasi latime. */
+.proiect__text {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  /* Randurile se termina toate pe aceeasi verticala, ca intr-o carte:
+     spatiile dintre cuvinte se intind ca sa umple randul pana la margine.
+     hyphens: auto taie cuvintele lungi, altfel raman goluri mari intre ele. */
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+}
+
+/* Cele doua intrari: backend si frontend, una langa alta. */
+.proiect__intrari {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 780px) {
+  .proiect__intrari {
+    grid-template-columns: 1fr;
+  }
+}
+
+.intrare {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  /* Banda colorata de sus deosebeste cele doua intrari dintr-o privire. */
+  border-top: 4px solid var(--brand);
+}
+
+/* Frontend-ul e portocaliu, ca sa se deosebeasca de albastrul backend-ului.
+   Culoarea nu e in variabilele temei: se foloseste numai aici. */
+.intrare--frontend {
+  border-top-color: #e07b1f;
+}
+
+.intrare__titlu {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.intrare__lista {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+/* Butonul sta jos, la aceeasi inaltime in ambele cutii, chiar daca listele
+   au numar diferit de puncte. Fiind un <a>, ar veni subliniat de la browser:
+   .btn nu anuleaza sublinierea, deci se face aici. */
+.intrare__btn {
+  margin-top: auto;
+  align-self: flex-start;
+  text-decoration: none;
+}
+
+.intrare--frontend .intrare__btn {
+  background: #e07b1f;
+  box-shadow: 0 2px 6px rgba(224, 123, 31, 0.3);
+}
+
+.intrare--frontend .intrare__btn:hover {
+  background: #c1690f;
+  box-shadow: 0 6px 16px rgba(224, 123, 31, 0.38);
 }

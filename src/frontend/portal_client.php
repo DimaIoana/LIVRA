@@ -1,26 +1,29 @@
 <?php
 
 /**
- * Portal client (front office): "login" simplu pentru clienti + urmarire colet.
+ * Urmarire colet (front office): coletele clientului logat.
  *
- * Pasii:
- *   1. lista clientilor in ordine alfabetica, cu nr. de expedieri in tranzit;
- *   2. se alege un client (?client=ID) -> se cere AWB-ul;
- *   3. daca AWB-ul coincide (si apartine clientului ales) -> se arata produsul,
- *      km, timpul rutei si cat timp a trecut de la inregistrarea expedierii
- *      (Data_expediere).
+ * Pagina arata cate un rand pentru fiecare colet din comenzile clientului:
+ * AWB, poza produsului, numele si pretul. Langa fiecare e un buton care adauga
+ * AWB-ul la urmarire, si abia atunci randul isi arata statusul livrarii si
+ * restul detaliilor (traseu, timp trecut, timp ramas, livrare estimata).
  *
- * Server-rendered, fara JS. "Login"-ul e o verificare usoara: clientul se
- * identifica prin nume + AWB-ul propriului colet.
+ * Ce AWB-uri sunt adaugate se tine in sesiune ($_SESSION['awb_urmarite']), deci
+ * nu se scrie nimic in baza de date.
+ *
+ * Server-rendered, fara JS: butoanele fac POST catre aceeasi pagina, iar dupa
+ * fiecare operatie se face redirect (Post-Redirect-Get).
  */
 
-require __DIR__ . '/../database/db_connection.php';
+// Sesiune, conexiune si helperii comuni de magazin: h(), lei(), poza_url(),
+// client_logat(), cere_login().
+require __DIR__ . '/_shop.php';
 
-/** Scapa text pentru HTML. */
-function h($value)
-{
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-}
+// Coletele sunt ale cuiva: trebuie sa stim al cui e cosul de comenzi.
+cere_login();
+
+$pagina = 'portal_client.php';
+$client = client_logat();
 
 /** Minute -> "6 h 30 min" / "45 min". */
 function timp_fmt($minutes)
@@ -101,62 +104,76 @@ function minute_program($start, $end)
     return intdiv($total, 60);
 }
 
-// --- Starea paginii ---
+/** AWB-urile pentru care clientul a cerut sa vada statusul. */
+function awb_urmarite()
+{
+    $lista = $_SESSION['awb_urmarite'] ?? [];
 
-$clientId = (int) ($_GET['client'] ?? 0);
-$client = null;
-$awb = '';
-$expediere = null;
-$eroareAwb = '';
-
-if ($clientId > 0) {
-    $stmt = $pdo->prepare('SELECT ClientID, Nume, Oras FROM clienti WHERE ClientID = :id');
-    $stmt->execute(['id' => $clientId]);
-    $client = $stmt->fetch();
-    if ($client === false) {
-        $client = null;
-        $clientId = 0;
-    }
+    return is_array($lista) ? $lista : [];
 }
 
-// Verificarea AWB-ului (dupa ce s-a ales un client).
-if ($client !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+// --- Actiuni (POST + redirect) ---
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
     $awb = trim((string) ($_POST['awb'] ?? ''));
 
-    if ($awb === '') {
-        $eroareAwb = 'Introdu numarul AWB.';
-    } else {
-        $stmt = $pdo->prepare(
-            'SELECT e.awb, e.Data_expediere, e.Data_livrare_estimata,
-                    e.Data_livrare_efectiva, e.Status_expediere,
-                    r.Oras_origine, r.Oras_destinatie, r.Distanta_km, r.Durata_min,
-                    cp.Product_ID, cp.Product_Name, cp.Cantitate
-             FROM expedieri e
-             JOIN rute r ON r.RutaID = e.RutaID
-             LEFT JOIN comenzi_produse cp ON cp.LinieID = e.LinieID
-             WHERE e.awb = :awb AND e.ClientID = :client'
-        );
-        $stmt->execute(['awb' => $awb, 'client' => $clientId]);
-        $expediere = $stmt->fetch();
-
-        if ($expediere === false) {
-            $expediere = null;
-            $eroareAwb = 'AWB gresit sau nu apartine acestui client.';
-        }
+    // Se accepta doar AWB-uri care chiar sunt ale clientului logat: altfel
+    // butonul ar putea fi folosit ca sa se urmareasca coletul altcuiva.
+    $alMeu = false;
+    if ($awb !== '') {
+        $stmt = $pdo->prepare('SELECT 1 FROM expedieri WHERE awb = :awb AND ClientID = :client');
+        $stmt->execute(['awb' => $awb, 'client' => $client['id']]);
+        $alMeu = $stmt->fetchColumn() !== false;
     }
+
+    $lista = awb_urmarite();
+
+    if ($action === 'adauga' && $alMeu && !in_array($awb, $lista, true)) {
+        $lista[] = $awb;
+        $_SESSION['awb_urmarite'] = $lista;
+    } elseif ($action === 'scoate') {
+        $_SESSION['awb_urmarite'] = array_values(array_filter($lista, function ($a) use ($awb) {
+            return $a !== $awb;
+        }));
+    } elseif ($action === 'toate') {
+        // "Adauga toate": statusul pentru tot ce are clientul, dintr-o apasare.
+        $_SESSION['awb_urmarite'] = $pdo
+            ->query('SELECT awb FROM expedieri WHERE ClientID = ' . (int) $client['id'])
+            ->fetchAll(PDO::FETCH_COLUMN);
+    } elseif ($action === 'niciunul') {
+        unset($_SESSION['awb_urmarite']);
+    }
+
+    header('Location: ' . $pagina);
+    exit;
 }
 
-// Lista de clienti (doar cand nu s-a ales unul).
-$clienti = [];
-if ($client === null) {
-    $clienti = $pdo->query(
-        "SELECT c.ClientID, c.Nume, c.Oras,
-                (SELECT COUNT(*) FROM expedieri e
-                  WHERE e.ClientID = c.ClientID AND e.Status_expediere = 'In tranzit') AS in_tranzit
-         FROM clienti c
-         ORDER BY c.Nume ASC"
-    )->fetchAll();
-}
+// --- Date pentru afisare ---
+
+// Coletele clientului: cate un rand pe expediere, cu produsul din comanda si
+// poza lui din catalog. Cele mai noi sus.
+$stmt = $pdo->prepare(
+    'SELECT e.awb, e.Data_expediere, e.Data_livrare_estimata,
+            e.Data_livrare_efectiva, e.Status_expediere,
+            r.Oras_origine, r.Oras_destinatie, r.Distanta_km, r.Durata_min,
+            cp.Product_ID, cp.Product_Name, cp.Cantitate, cp.Pret_unitar, cp.Subtotal,
+            cp.ComandaID, p.poze
+       FROM expedieri e
+       JOIN rute r ON r.RutaID = e.RutaID
+       LEFT JOIN comenzi_produse cp ON cp.LinieID = e.LinieID
+       LEFT JOIN produse p ON p.Product_ID = cp.Product_ID
+      WHERE e.ClientID = :client
+      ORDER BY e.Data_expediere DESC'
+);
+$stmt->execute(['client' => $client['id']]);
+$colete = $stmt->fetchAll();
+
+$urmarite = awb_urmarite();
+
+// "Acum" se ia din DB (acelasi ceas care a scris Data_expediere), ca sa nu apara
+// diferente din fusul orar al PHP. O singura citire pentru toata lista.
+$acum = $pdo->query('SELECT NOW()')->fetchColumn();
 
 ?>
 <!DOCTYPE html>
@@ -164,179 +181,178 @@ if ($client === null) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LIVRA - Portal client</title>
+  <title>LIVRA - Urmarire colet</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body>
 
 <header class="header">
   <div class="header__inner">
     <a class="logo" href="magazin.php">LIVRA</a>
-    <span class="header__subtitle">Portal client - urmarire colet</span>
+    <span class="header__subtitle">Urmarire colet</span>
     <nav class="nav">
       <a class="nav__link" href="magazin.php">Produse</a>
-      <a class="nav__link" href="cos.php">Cos</a>
+      <a class="nav__link" href="cos.php">Cos<?= cos_bucati() ? ' (' . (int) cos_bucati() . ')' : '' ?></a>
       <a class="nav__link nav__link--active" href="portal_client.php">Urmarire colet</a>
+      <span class="nav__link" style="color:var(--text-muted)">Salut, <?= h($client['nume']) ?></span>
+      <a class="nav__link" href="login.php?logout=1">Iesire</a>
     </nav>
   </div>
 </header>
 
 <main class="container">
+<!-- Coloana ingusta, centrata: randurile de colet sunt scurte, deci intinse pe
+     toata latimea ecranului ar lasa un gol mare in dreapta. -->
+<div class="colete">
 
-  <?php if ($client === null): ?>
+  <div class="shop-hero">
+    <h1 class="shop-hero__title">Coletele mele</h1>
+    <p class="shop-hero__subtitle">
+      Fiecare rand e un colet din comenzile tale, cu statusul livrarii langa produs.
+      Apasa "Detalii" ca sa vezi traseul si timpii.
+    </p>
+  </div>
 
-    <div class="shop-hero">
-      <h1 class="shop-hero__title">Login clienti</h1>
-      <p class="shop-hero__subtitle">Alege-ti numele, apoi introdu AWB-ul coletului ca sa vezi statusul.</p>
-    </div>
+  <?php if (!$colete): ?>
+    <div class="card"><p class="empty">Nu ai niciun colet expediat inca.</p></div>
+  <?php else: ?>
 
-    <div class="card">
-      <table class="table">
-        <thead>
-          <tr><th>Client</th><th>Oras</th><th>In tranzit</th><th></th></tr>
-        </thead>
-        <tbody>
-          <?php foreach ($clienti as $c): ?>
-            <tr>
-              <td><?= h($c['Nume']) ?></td>
-              <td><?= h($c['Oras']) ?></td>
-              <td class="cell--number">
-                <?php if ((int) $c['in_tranzit'] > 0): ?>
-                  <span class="tag tag--warn"><?= (int) $c['in_tranzit'] ?></span>
-                <?php else: ?>
-                  <span class="tag">0</span>
-                <?php endif; ?>
-              </td>
-              <td class="row-actions">
-                <a class="btn--link" href="portal_client.php?client=<?= (int) $c['ClientID'] ?>">Login</a>
-              </td>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-      <?php if (!$clienti): ?>
-        <p class="empty">Nu exista clienti.</p>
+    <div class="awb-form">
+      <span class="awb-form__count">
+        <?= count($colete) ?> colete &middot; <?= count($urmarite) ?> cu detalii deschise
+      </span>
+      <form method="post" action="<?= h($pagina) ?>">
+        <input type="hidden" name="action" value="toate">
+        <button class="btn btn--ghost" type="submit">Detalii la toate</button>
+      </form>
+      <?php if ($urmarite): ?>
+        <form method="post" action="<?= h($pagina) ?>">
+          <input type="hidden" name="action" value="niciunul">
+          <button class="btn btn--ghost" type="submit">Ascunde toate</button>
+        </form>
       <?php endif; ?>
     </div>
 
-  <?php else: ?>
-
-    <div class="card__head" style="margin-bottom:16px">
-      <div>
-        <h1 class="card__title">Buna, <?= h($client['Nume']) ?></h1>
-        <p class="card__desc">Introdu AWB-ul coletului tau ca sa vezi statusul livrarii.</p>
-      </div>
-      <a class="btn btn--ghost" href="portal_client.php">Alt client</a>
-    </div>
-
-    <div class="card" style="padding:22px;max-width:520px">
-      <form class="form" method="post" action="portal_client.php?client=<?= (int) $clientId ?>">
-        <?php if ($eroareAwb !== ''): ?>
-          <p class="form__error"><?= h($eroareAwb) ?></p>
-        <?php endif; ?>
-        <label class="field">
-          <span class="field__label">Numar AWB</span>
-          <input class="input" type="text" name="awb" value="<?= h($awb) ?>"
-                 placeholder="ex: AWB20260723000032" autofocus>
-        </label>
-        <div class="form__actions">
-          <button class="btn" type="submit">Verifica coletul</button>
-        </div>
-      </form>
-    </div>
-
-    <?php if ($expediere !== null): ?>
+    <?php foreach ($colete as $c): ?>
       <?php
-        // Momentul expedierii (Data_expediere are acum si ora).
-        $creata = $expediere['Data_expediere'];
+        $poza = poza_url($c['poze'] ?? '');
+        $adaugat = in_array($c['awb'], $urmarite, true);
+        $livrat = $c['Status_expediere'] === 'Livrat';
 
-        // "Acum" se ia din DB (acelasi ceas care a scris Data_expediere), ca sa
-        // nu apara diferente din fusul orar al PHP.
-        $acum = $pdo->query('SELECT NOW()')->fetchColumn();
-
-        $prestabilit = (int) $expediere['Durata_min'];
-        $trecut = minute_program($creata, $acum);
-        $ramas = max(0, $prestabilit - $trecut);
-
-        // Statusul real (setat de operator) e sursa de adevar; timpul ramas e
-        // doar o estimare din timpul de condus prestabilit.
-        $livrat = $expediere['Status_expediere'] === 'Livrat';
+        // Culoarea etichetei de status: verde livrat, galben inca pe drum,
+        // rosu daca ceva n-a mers (intarziat, returnat, anulat).
+        $clasaStatus = [
+            'Livrat' => 'tag--ok',
+            'In tranzit' => 'tag--warn',
+            'Intarziat' => 'tag--fail',
+            'Returnat' => 'tag--fail',
+            'Anulat' => 'tag--fail',
+        ][$c['Status_expediere']] ?? '';
       ?>
-      <div class="card" style="padding:22px;margin-top:18px;max-width:640px">
-        <div class="card__head">
-          <div>
-            <h2 class="card__title" style="font-size:18px">Colet <?= h($expediere['awb']) ?></h2>
-            <p class="card__desc"><?= h($expediere['Oras_origine']) ?> &rarr; <?= h($expediere['Oras_destinatie']) ?></p>
+      <article class="colet">
+        <!-- Randul: AWB + poza + nume + pret, apoi butonul de adaugare -->
+        <div class="colet__cap">
+          <div class="colet__awb">
+            <span class="colet__awb-eticheta">AWB</span>
+            <strong class="colet__awb-numar"><?= h($c['awb']) ?></strong>
           </div>
-          <span class="tag <?= $expediere['Status_expediere'] === 'Livrat' ? 'tag--ok' : 'tag--warn' ?>">
-            <?= h($expediere['Status_expediere']) ?>
-          </span>
+
+          <div class="colet__media<?= $poza ? ' colet__media--photo' : '' ?>">
+            <?php if ($poza): ?>
+              <img class="colet__img" src="<?= h($poza) ?>" alt="<?= h($c['Product_Name']) ?>" loading="lazy">
+            <?php endif; ?>
+          </div>
+
+          <div class="colet__produs">
+            <h2 class="colet__nume">
+              <?= $c['Product_Name'] !== null ? h($c['Product_Name']) : 'Produs indisponibil' ?>
+            </h2>
+            <?php if ($c['ComandaID'] !== null): ?>
+              <p class="colet__pret-detaliu">Comanda #<?= (int) $c['ComandaID'] ?></p>
+            <?php endif; ?>
+          </div>
+
+          <!-- Statusul sta intre nume si pret si se vede mereu, la orice colet,
+               vechi sau nou - nu doar dupa ce s-au cerut detaliile. -->
+          <div class="colet__status">
+            <span class="tag <?= h($clasaStatus) ?>"><?= h($c['Status_expediere']) ?></span>
+          </div>
+
+          <div class="colet__pret-col">
+            <?php if ($c['Pret_unitar'] !== null): ?>
+              <p class="colet__pret"><?= h(lei($c['Subtotal'])) ?></p>
+              <p class="colet__pret-detaliu"><?= (int) $c['Cantitate'] ?> buc &times; <?= h(lei($c['Pret_unitar'])) ?></p>
+            <?php else: ?>
+              <p class="colet__pret-detaliu">-</p>
+            <?php endif; ?>
+          </div>
+
+          <div class="colet__actiune">
+            <form method="post" action="<?= h($pagina) ?>">
+              <input type="hidden" name="action" value="<?= $adaugat ? 'scoate' : 'adauga' ?>">
+              <input type="hidden" name="awb" value="<?= h($c['awb']) ?>">
+              <?php if ($adaugat): ?>
+                <button class="btn btn--ghost" type="submit">Ascunde</button>
+              <?php else: ?>
+                <button class="btn" type="submit">Detalii</button>
+              <?php endif; ?>
+            </form>
+          </div>
         </div>
 
-        <table class="table" style="margin-top:12px">
-          <tbody>
-            <tr>
-              <td>Produs</td>
-              <td><strong>
-                <?php if ($expediere['Product_Name'] !== null): ?>
-                  <?= h($expediere['Product_Name']) ?> (<?= h($expediere['Product_ID']) ?>) &middot; <?= (int) $expediere['Cantitate'] ?> buc
-                <?php else: ?>
-                  indisponibil
-                <?php endif; ?>
-              </strong></td>
-            </tr>
-            <tr>
-              <td>Distanta</td>
-              <td><strong><?= (int) $expediere['Distanta_km'] ?> km</strong></td>
-            </tr>
-            <tr>
-              <td>Timp prestabilit (ruta)</td>
-              <td><strong><?= h(timp_fmt($prestabilit)) ?></strong></td>
-            </tr>
-            <tr>
-              <td>Expediat la</td>
-              <td><?= h(fmt_eu($creata)) ?></td>
-            </tr>
-            <tr>
-              <td>Status livrare</td>
-              <td>
-                <span class="tag <?= $livrat ? 'tag--ok' : 'tag--warn' ?>"><?= h($expediere['Status_expediere']) ?></span>
-                <span class="field__hint" style="display:inline"> (sursa oficiala)</span>
-              </td>
-            </tr>
+        <?php if ($adaugat): ?>
+          <?php
+            $prestabilit = (int) $c['Durata_min'];
+            $trecut = minute_program($c['Data_expediere'], $acum);
+            $ramas = max(0, $prestabilit - $trecut);
+          ?>
+          <table class="table colet__detalii">
+            <tbody>
+              <tr>
+                <td>Traseu</td>
+                <td><strong><?= h($c['Oras_origine']) ?> &rarr; <?= h($c['Oras_destinatie']) ?></strong>
+                    <span class="field__hint" style="display:inline">(<?= (int) $c['Distanta_km'] ?> km)</span></td>
+              </tr>
+              <tr>
+                <td>Expediat la</td>
+                <td><?= h(fmt_eu($c['Data_expediere'])) ?></td>
+              </tr>
+              <tr>
+                <td>Timp prestabilit (ruta)</td>
+                <td><strong><?= h(timp_fmt($prestabilit)) ?></strong></td>
+              </tr>
 
-            <?php if ($livrat): ?>
-              <tr>
-                <td>Livrat la</td>
-                <td><strong><?= $expediere['Data_livrare_efectiva'] !== null ? h(fmt_eu($expediere['Data_livrare_efectiva'])) : 'data indisponibila' ?></strong></td>
-              </tr>
-            <?php else: ?>
-              <tr>
-                <td>Timp trecut (program 07:00&ndash;22:00)</td>
-                <td><strong><?= h(timp_fmt($trecut)) ?></strong></td>
-              </tr>
-              <tr>
-                <td>Timp ramas estimat</td>
-                <td><strong>
-                  <?php if ($ramas > 0): ?>
-                    <?= h(timp_fmt($ramas)) ?>
-                  <?php else: ?>
-                    timp estimat depasit &ndash; inca in tranzit
-                  <?php endif; ?>
-                </strong></td>
-              </tr>
-              <tr>
-                <td>Livrare estimata</td>
-                <td><?= h(fmt_eu($expediere['Data_livrare_estimata'])) ?></td>
-              </tr>
-            <?php endif; ?>
-          </tbody>
-        </table>
-      </div>
-    <?php endif; ?>
+              <?php if ($livrat): ?>
+                <tr>
+                  <td>Livrat la</td>
+                  <td><strong><?= $c['Data_livrare_efectiva'] !== null ? h(fmt_eu($c['Data_livrare_efectiva'])) : 'data indisponibila' ?></strong></td>
+                </tr>
+              <?php else: ?>
+                <tr>
+                  <td>Timp trecut (program 07:00&ndash;22:00)</td>
+                  <td><strong><?= h(timp_fmt($trecut)) ?></strong></td>
+                </tr>
+                <tr>
+                  <td>Timp ramas estimat</td>
+                  <td><strong>
+                    <?= $ramas > 0 ? h(timp_fmt($ramas)) : 'timp estimat depasit &ndash; inca in tranzit' ?>
+                  </strong></td>
+                </tr>
+                <tr>
+                  <td>Livrare estimata</td>
+                  <td><?= h(fmt_eu($c['Data_livrare_estimata'])) ?></td>
+                </tr>
+              <?php endif; ?>
+            </tbody>
+          </table>
+        <?php endif; ?>
+      </article>
+    <?php endforeach; ?>
 
   <?php endif; ?>
 
+</div>
 </main>
 
 </body>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<title>Dima Ioana - Junior Data Analyst</title>
+<style>
+/* =========================================================
+   Sursa de tiparire pentru CV-ul PDF.
+   Acelasi limbaj vizual ca site-ul: cutii cu chenar, titluri
+   cu majuscule si linie dedesubt, buline albastre, casute
+   mici cu chenar. Doua culori: negru si albastru.
+   Continutul e cel de pe site (webpersonal/index.html).
+   Se transforma in PDF cu Chrome: --headless --print-to-pdf
+   ========================================================= */
+
+@page { size: A4; margin: 11mm 10mm; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --negru:   #10151C;
+  --albastru:#1B44E0;
+  --linie:   #10151C;
+  --gri:     #F4F6FA;   /* fundal foarte discret pentru casutele mici */
+}
+
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+body {
+  font-family: Candara, Corbel, "Segoe UI", Calibri, Arial, sans-serif;
+  font-size: 8.4pt; line-height: 1.42;
+  color: var(--negru); background: #FFFFFF;
+}
+
+/* ---------- Antetul ---------- */
+.antet {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 8mm; padding-bottom: 4mm; margin-bottom: 4mm;
+  border-bottom: 2px solid var(--negru);
+}
+.nume {
+  font-size: 27pt; font-weight: 700; line-height: 1;
+  letter-spacing: -.01em; text-transform: uppercase; color: var(--negru);
+}
+.rol {
+  font-size: 9.5pt; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--albastru); margin-top: 3px;
+}
+/* datele de contact, tot in casute cu chenar */
+.contact { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 95mm; }
+.contact span {
+  border: 1px solid var(--negru); padding: 2px 7px;
+  font-size: 7.6pt; color: var(--albastru); white-space: nowrap;
+}
+
+/* ---------- Cutia, exact ca pe site ---------- */
+.cutie {
+  border: 1px solid var(--linie);
+  padding: 4mm 4.5mm;
+  margin-bottom: 4mm;
+  break-inside: avoid;
+}
+.cutie > h2 {
+  font-size: 10.5pt; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; color: var(--negru);
+  padding-bottom: 2mm; margin-bottom: 3mm;
+  border-bottom: 1px solid var(--linie);
+}
+/* doua cutii pe acelasi rand, ca perechile de pe site */
+.rand { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.rand .cutie { margin-bottom: 4mm; }
+.rand--65 { grid-template-columns: 65fr 35fr; }
+
+/* cutiile mari de experienta se pot rupe intre pagini, intrarile din ele nu */
+.cutie--lunga { break-inside: auto; }
+
+/* ---------- Intrare de CV: meta | linie cu bulina | continut ---------- */
+.intrare {
+  display: grid; grid-template-columns: 28mm 1fr; gap: 3mm;
+  break-inside: avoid;
+}
+.intrare + .intrare { margin-top: 4mm; }
+.meta b {
+  display: block; font-size: 8pt; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.meta span { display: block; font-size: 7.4pt; color: var(--albastru); letter-spacing: .03em; }
+
+.corp {
+  position: relative; padding-left: 4.5mm;
+  border-left: 1.5px solid var(--negru);
+}
+.corp::before {
+  content: ""; position: absolute; left: -4px; top: 3px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--albastru);
+}
+.corp h3 {
+  font-size: 8.6pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: 2px;
+}
+/* descrierea firmei e albastra, ca pe site */
+.corp .desc { font-size: 8pt; color: var(--albastru); margin-bottom: 3px; text-align: justify; }
+
+/* ---------- Liste cu bulina albastra ---------- */
+.lista li, .corp li {
+  list-style: none; position: relative; padding-left: 4mm;
+  font-size: 8.2pt; line-height: 1.4; margin-bottom: 2px;
+}
+.lista li::before, .corp li::before {
+  content: "\2022"; position: absolute; left: 1mm; color: var(--albastru);
+}
+.lista--2 { columns: 2; column-gap: 6mm; }
+.lista--2 li, .pasi li { break-inside: avoid; }
+
+/* pasii metodologiei: numar albastru, citit de sus in jos pe doua coloane */
+.pasi { columns: 2; column-gap: 6mm; counter-reset: pas; }
+.pasi li {
+  list-style: none; position: relative; padding-left: 5.5mm;
+  font-size: 8.2pt; line-height: 1.4; margin-bottom: 2px;
+}
+.pasi li::before {
+  counter-increment: pas; content: counter(pas) ".";
+  position: absolute; left: 0; color: var(--albastru); font-weight: 700;
+}
+
+/* ---------- Casutele mici cu chenar ---------- */
+.patrate { display: flex; flex-wrap: wrap; gap: 3px; }
+.patrate span {
+  border: 1px solid var(--negru); background: var(--gri);
+  padding: 1.5px 6px; font-size: 7.8pt;
+}
+.patrate--albastre span { border-color: var(--albastru); color: var(--albastru); }
+
+/* grupele de competente tehnice */
+.grup + .grup { margin-top: 3mm; }
+.grup h3 {
+  font-size: 8.4pt; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--albastru); margin-bottom: 2px;
+}
+.grup .sub { font-size: 7.8pt; font-weight: 700; margin: 2px 0 1px; }
+
+/* ---------- Proiectul ---------- */
+.proiect h3 { font-size: 9.5pt; font-weight: 700; margin-bottom: 3px; }
+.proiect p { font-size: 8.2pt; line-height: 1.45; text-align: justify; }
+.proiect p + p { margin-top: 3px; }
+.proiect .patrate { margin-top: 3mm; }
+</style>
+</head>
+<body>
+
+<!-- ============ ANTET ============ -->
+<header class="antet">
+  <div>
+    <div class="nume">Dima Ioana</div>
+    <div class="rol">Junior Data Analyst</div>
+  </div>
+
+  <div class="contact">
+    <span>București, România</span>
+    <span>0730 679 003</span>
+    <span>dimaioana5@gmail.com</span>
+    <span>ioanaanalytics.com/app</span>
+  </div>
+</header>
+
+<!-- ============ DESPRE MINE ============ -->
+<section class="cutie">
+  <h2>Despre mine</h2>
+  <p style="text-align: justify">Sunt o persoană organizată și atentă la detalii, pasionată de analiza datelor și de inteligența artificială, precum și de modul în care acestea pot contribui la luarea unor decizii cât mai bune. Îmi place să înțeleg provocările, să identific sursele potrivite de date, să selectez și să validez informațiile relevante și să folosesc instrumentele și tehnologiile adecvate pentru a oferi soluții cât mai eficiente pentru echipă și pentru business, urmând o metodologie bine structurată. Sunt o persoană curioasă, învăț rapid și îmi place să lucrez în echipă, într-un mediu bazat pe colaborare și comunicare. Îmi doresc să îmi dezvolt cariera în domeniul analizei de date și să evoluez constant atât din punct de vedere profesional, cât și personal.</p>
+</section>
+
+<!-- ============ EXPERIENTA PROFESIONALA ============ -->
+<section class="cutie cutie--lunga">
+  <h2>Experiența profesională</h2>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>Domus Capital</b>
+      <span>București</span>
+      <span>2026</span>
+    </div>
+    <div class="corp">
+      <h3>Junior Data Analyst</h3>
+      <p class="desc">Domus Capital este o companie de investiții imobiliare nou-înființată în România, axată pe identificarea, achiziția, renovarea și valorificarea proprietăților rezidențiale, cu focus pe dezvoltarea și optimizarea investițiilor imobiliare.</p>
+      <ul>
+        <li>Colectarea și verificarea periodică a datelor privind costurile și progresul proiectelor imobiliare din surse diferite</li>
+        <li>Crearea și actualizarea rapoartelor privind costurile și progresul proiectelor</li>
+        <li>Analiza și controlul costurilor proiectelor imobiliare, inclusiv materiale, furnizori, termene de livrare, incidente și penalități</li>
+        <li>Identificarea și raportarea discrepanțelor și incidentelor care pot afecta costurile sau termenele proiectelor</li>
+        <li>Analiza abaterilor de cost față de buget și estimările inițiale</li>
+        <li>Monitorizarea furnizorilor, comenzilor, livrărilor și termenelor de execuție</li>
+        <li>Colaborarea directă cu managementul pentru furnizarea datelor necesare luării deciziilor</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>Brink's Cash Solution</b>
+      <span>București</span>
+      <span>2023&ndash;2024</span>
+    </div>
+    <div class="corp">
+      <h3>Junior Data Analyst</h3>
+      <p class="desc">Brink's Cash Solutions este o companie specializată în cash management, transportul și procesarea valorilor și administrarea rețelelor de ATM-uri, oferind servicii de alimentare, reconciliere, monitorizare și raportare pentru clienți.</p>
+      <ul>
+        <li>Analiza și centralizarea datelor operaționale provenite din rețeaua de ATM-uri</li>
+        <li>Colectarea și verificarea datelor furnizate de echipele de casieri din teren</li>
+        <li>Reconcilierea datelor și verificarea consistenței informațiilor financiare și operaționale</li>
+        <li>Identificarea și investigarea discrepanțelor financiare și a incidentelor operaționale</li>
+        <li>Introducerea și validarea datelor în baze de date, fișiere Excel și aplicații corporative</li>
+        <li>Pregătirea datelor și efectuarea pre-reconcilierii</li>
+        <li>Centralizarea și transmiterea rapoartelor către clienți și departamentele interne</li>
+        <li>Monitorizarea indicatorilor operaționali și urmărirea situațiilor care necesitau intervenție</li>
+        <li>Colaborarea cu echipele de casieri și instituțiile bancare pentru clarificarea discrepanțelor și incidentelor</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>iSense</b>
+      <span>București</span>
+      <span>2023</span>
+    </div>
+    <div class="corp">
+      <h3>Junior Data Analyst</h3>
+      <p class="desc">iSense Solutions este o companie specializată în cercetare de piață și consumer insights, care colectează și analizează date despre consumatori pentru a sprijini procesul de luare a deciziilor.</p>
+      <ul>
+        <li>Colectarea datelor din surse multiple</li>
+        <li>Curățarea și prelucrarea datelor</li>
+        <li>Normalizarea și standardizarea datelor</li>
+        <li>Validarea calității și consistenței datelor</li>
+        <li>Organizarea și structurarea datelor pentru analiză</li>
+        <li>Pregătirea dataset-urilor pentru analiză și raportare</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STUDII ============ -->
+<section class="cutie">
+  <h2>Studii</h2>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>Universitatea Româno-Americană</b>
+      <span>București</span>
+      <span>2023&ndash;2025</span>
+    </div>
+    <div class="corp">
+      <h3>Masterand</h3>
+      <ul><li>Facultatea de Informatică Managerială, specializarea Informatică Economică</li></ul>
+    </div>
+  </div>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>Universitatea Româno-Americană</b>
+      <span>București</span>
+      <span>2020&ndash;2023</span>
+    </div>
+    <div class="corp">
+      <h3>Licență</h3>
+      <ul><li>Facultatea de Informatică Managerială, specializarea Informatică Economică</li></ul>
+    </div>
+  </div>
+
+  <div class="intrare">
+    <div class="meta">
+      <b>Liceul Teoretic &bdquo;Eugen Lovinescu&rdquo;</b>
+      <span>București</span>
+      <span>2016&ndash;2020</span>
+    </div>
+    <div class="corp">
+      <h3>Diplomă de Bacalaureat</h3>
+      <ul><li>Profil Filologie</li></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPETENTE TEHNICE ============ -->
+<section class="cutie">
+  <h2>Competențe tehnice</h2>
+
+  <div class="grup">
+    <h3>Excel</h3>
+    <div class="patrate">
+      <span>External Data Connections</span><span>Pivot Tables</span><span>Charts / KPI</span><span>Conditional Formatting</span><span>Data Validation</span><span>Sort &amp; Filter</span><span>XLOOKUP / VLOOKUP / INDEX / MATCH</span><span>IF / IFS / AND / OR / IFERROR</span><span>SUM / SUMIF / SUMIFS</span><span>COUNT / COUNTIF / COUNTIFS</span><span>AVERAGE / MIN / MAX</span><span>ROUND / ABS / TRUNC</span><span>LEFT / RIGHT / MID / LEN</span><span>TRIM / CONCAT / TEXT</span><span>TODAY() / NOW() / DATE()</span><span>YEAR() / MONTH() / DAY()</span><span>UNIQUE / FILTER / SORT</span><span>What-If Analysis</span><span>Forecast Sheet</span>
+    </div>
+  </div>
+
+  <div class="grup">
+    <h3>SQL &amp; Databases</h3>
+    <p class="sub">SQL</p>
+    <div class="patrate">
+      <span>SELECT</span><span>INSERT / UPDATE / DELETE</span><span>WHERE / BETWEEN / LIKE / IN / IS NULL</span><span>ORDER BY / GROUP BY / HAVING / DISTINCT / LIMIT</span><span>INNER / LEFT / RIGHT JOIN</span><span>COUNT / SUM / AVG / MIN / MAX</span><span>ROUND / ABS / TRUNC</span><span>CASE / AS (Aliases)</span><span>CONCAT / SUBSTRING / LENGTH</span><span>UPPER / LOWER</span><span>IFNULL</span><span>DATE() / YEAR() / MONTH() / DAY() / NOW()</span>
+    </div>
+    <p class="sub">Database</p>
+    <div class="patrate"><span>MySQL / MariaDB</span></div>
+    <p class="sub">phpMyAdmin</p>
+    <div class="patrate">
+      <span>Structure</span><span>SQL Query Console</span><span>Export / Import</span><span>Operations</span><span>Routines</span><span>Events</span><span>Triggers</span><span>Designer</span>
+    </div>
+  </div>
+
+  <div class="grup">
+    <h3>ETL: Power Query</h3>
+    <div class="patrate">
+      <span>Data Import / Data Connections</span><span>Append Queries / Merge Queries</span><span>Filter / Sort</span><span>Remove Duplicates</span><span>Replace Values</span><span>Split Columns / Merge Columns</span><span>Pivot / Unpivot</span><span>Change Data Types</span><span>Fill Down / Fill Up</span><span>Custom Columns</span><span>Conditional Columns</span><span>Group By</span><span>Date &amp; Time Transformations</span><span>Text Transformations</span>
+    </div>
+  </div>
+
+  <div class="grup">
+    <h3>Artificial Intelligence</h3>
+    <div class="patrate">
+      <span>Prompting</span><span>AI Assistants</span><span>Claude Code (contexts, agents, skills, tools)</span><span>Visual Studio Code</span><span>API Integration</span><span>Database Integration</span><span>GitHub</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTRUMENTE | METODOLOGIA ============ -->
+<div class="rand">
+  <section class="cutie">
+    <h2>Instrumente</h2>
+    <div class="patrate patrate--albastre">
+      <span>Microsoft Excel</span><span>Power Query</span><span>Power BI</span><span>SQL</span><span>MySQL</span><span>MariaDB</span><span>phpMyAdmin</span><span>ODBC</span><span>Visual Studio Code</span><span>GitHub</span><span>REST APIs</span><span>Claude Code</span><span>AI Assistants</span>
+    </div>
+  </section>
+
+  <section class="cutie">
+    <h2>Metodologia de lucru</h2>
+    <ol class="pasi">
+      <li>Înțelegerea cerinței și a obiectivului analizei</li>
+      <li>Colectarea și integrarea datelor din surse diferite</li>
+      <li>Curățarea și verificarea calității datelor</li>
+      <li>Structurarea și pregătirea datelor pentru analiză</li>
+      <li>Analiza datelor și identificarea tendințelor, abaterilor și discrepanțelor</li>
+      <li>Calcularea și monitorizarea indicatorilor (KPI)</li>
+      <li>Crearea rapoartelor și vizualizarea rezultatelor</li>
+      <li>Interpretarea rezultatelor și formularea concluziilor</li>
+      <li>Comunicarea rezultatelor către stakeholderi / management</li>
+      <li>Identificarea posibilităților de îmbunătățire și automatizare</li>
+    </ol>
+  </section>
+</div>
+
+<!-- ============ SOFT SKILLS | ALTE INFORMATII ============ -->
+<div class="rand">
+  <section class="cutie">
+    <h2>Soft skills</h2>
+    <ul class="lista">
+      <li>Gândire analitică</li>
+      <li>Orientare către rezultate</li>
+      <li>Atenție la detalii</li>
+      <li>Lucru în echipă</li>
+      <li>Organizare</li>
+      <li>Comunicare</li>
+      <li>Adaptabilitate</li>
+      <li>Gestionarea timpului</li>
+      <li>Curiozitate și dorință de învățare continuă</li>
+      <li>Capacitatea de a lucra cu volume mari de date</li>
+    </ul>
+  </section>
+
+  <section class="cutie">
+    <h2>Alte informații</h2>
+    <ul class="lista">
+      <li>Permis de conducere categoria B</li>
+      <li>Autoturism personal</li>
+    </ul>
+  </section>
+</div>
+
+<!-- ============ PROIECTE ============ -->
+<section class="cutie proiect">
+  <h2>Proiecte</h2>
+  <h3>LIVRA - Sistem analitic pentru o companie de curierat</h3>
+  <p>In cadrul acestui proiect am dorit sa creez un sistem analitic care sa sprijine procesul de luare a deciziilor intr-o companie de curierat pe care am numit-o LIVRA. Sistemul permite crearea unor rapoarte dinamice conectate la date provenite din surse diferite, precum baza de date si API-uri, precum si integrarea cu Power BI.</p>
+  <p>De asemenea, am dezvoltat un algoritm de optimizare a rutelor cu ajutorul AI (Claude Code), cu scopul de a identifica rute mai eficiente si de a contribui la reducerea costurilor si la cresterea profitabilitatii companiei.</p>
+  <div class="patrate">
+    <span>Excel</span><span>SQL</span><span>Power Query</span><span>Power BI</span><span>MySQL</span><span>MariaDB</span><span>PHP</span><span>Claude Code</span>
+  </div>
+</section>
+
+</body>
+</html>

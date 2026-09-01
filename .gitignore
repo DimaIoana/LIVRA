@@ -20,3 +20,8 @@ Thumbs.db
 # Uploads / generated content
 uploads/
 cache/
+
+# Pachete de urcat pe gazduire - contin parola bazei in clar
+# (src/database/db_connection.php cu datele de la your-database.de)
+/samedayonline/
+/site-online/webpersonal/app/

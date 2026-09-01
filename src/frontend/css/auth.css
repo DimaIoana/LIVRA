@@ -138,6 +138,22 @@
   background: var(--bg);
 }
 
+/* Coloana din dreapta: butonul "Inapoi" deasupra casetei, aliniat cu marginea
+   ei din stanga, adica langa panoul albastru. */
+.auth__coloana {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth__inapoi {
+  align-self: flex-start;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
 .auth__form-box {
   width: 100%;
   max-width: 400px;
@@ -158,6 +174,61 @@
   margin: 6px 0 22px;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+/* Contul de test, sub subtitlu: proiectul e o demonstratie, deci datele de
+   intrare stau la vedere. Cifrele sunt scrise cu font monospatiat, ca sa nu se
+   confunde 1 cu l sau 0 cu O cand le copiaza cineva. */
+.auth__demo {
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  background: var(--brand-soft);
+  border: 1px solid #c9d4ff;
+  border-radius: 10px;
+}
+
+/* Titlul si butonul de intrare directa, pe acelasi rand. */
+.auth__demo-cap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.auth__demo-titlu {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--brand-dark);
+}
+
+.auth__demo-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.auth__demo-lista {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  align-items: baseline;
+}
+
+.auth__demo-lista dt {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.auth__demo-lista dd {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text);
 }
 
 .auth__form-box .alert {

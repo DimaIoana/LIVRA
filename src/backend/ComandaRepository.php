@@ -421,4 +421,35 @@ class ComandaRepository extends BaseRepository
 
         return true;
     }
+
+    /**
+     * O comanda anulata care n-a expediat nimic poate fi redeschisa.
+     *
+     * Anularea nu misca marfa si nu lasa cifre in urma, deci nu e o operatie
+     * ireversibila - iar decizia e a utilizatorului, nu a aplicatiei. Fara asta,
+     * o apasare gresita pe "Anuleaza" bloca definitiv comanda: la comenzile
+     * anulate nu mai aparea niciun buton, deci nici fereastra de decizie.
+     */
+    public function poateFiRedeschisa(array $comanda)
+    {
+        return $comanda['Status'] === 'Anulata' && (int) $comanda['NrExpediate'] === 0;
+    }
+
+    /**
+     * "Redeschide": comanda anulata revine pe "Noua", ca sa poata fi decisa din
+     * nou. Nu se inregistreaza nicio cifra - alea vin abia la "Trimite".
+     *
+     * @return bool false daca nu e anulata sau are deja linii expediate
+     */
+    public function redeschide(array $comanda)
+    {
+        if (!$this->poateFiRedeschisa($comanda)) {
+            return false;
+        }
+
+        $this->pdo->prepare('UPDATE comenzi SET Status = :s WHERE ComandaID = :id')
+            ->execute(['s' => 'Noua', 'id' => (int) $comanda['ComandaID']]);
+
+        return true;
+    }
 }

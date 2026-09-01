@@ -12,6 +12,17 @@
 
 require __DIR__ . '/_auth.php';
 
+/**
+ * Contul de test, aratat pe pagina: proiectul e o demonstratie, deci cine il
+ * vede prima data trebuie sa poata intra fara sa ceara datele nimanui.
+ *
+ * Definite o singura data: aceleasi valori se si afiseaza, si se trimit de
+ * butonul "(click aici)". Altfel s-ar putea schimba una fara cealalta si
+ * butonul ar duce la "User sau parola gresita".
+ */
+const DEMO_USER = 'ioana';
+const DEMO_PAROLA = '1234';
+
 /** Scapa text pentru HTML. */
 function h($value)
 {
@@ -74,6 +85,7 @@ $faraConturi = $utilizatori->numarConturi() === 0;
   <title>LIVRA - Panou administrare</title>
   <link rel="stylesheet" href="css/app.css?v=<?= filemtime(__DIR__ . '/css/app.css') ?>">
   <link rel="stylesheet" href="css/auth.css?v=<?= filemtime(__DIR__ . '/css/auth.css') ?>">
+  <?php require_once __DIR__ . '/_analytics.php'; ?>
 </head>
 <body class="auth-body">
 
@@ -98,10 +110,40 @@ $faraConturi = $utilizatori->numarConturi() === 0;
 
   <!-- Formularul de autentificare -->
   <section class="auth__panou">
-    <div class="auth__form-box">
+    <div class="auth__coloana">
+
+      <!-- Intoarcerea la prezentarea proiectului, de unde se ajunge aici.
+           admin_base_url() da radacina aplicatiei, ca linkul sa fie corect si
+           local (/CLAUDE/PRIMUL), si pe server (/app). -->
+      <a class="btn auth__inapoi" href="<?= h(admin_base_url()) ?>/proiect.php">
+        &larr; Inapoi
+      </a>
+
+      <div class="auth__form-box">
 
       <h1 class="auth__titlu">Panou administrare</h1>
       <p class="auth__subtitlu">Autentifica-te ca sa administrezi comenzile, coletele si rutele.</p>
+
+      <!-- Contul de test, cu intrare directa: butonul trimite chiar datele de mai
+           jos catre acelasi formular de login, deci trece prin aceleasi verificari
+           (inclusiv blocarea dupa prea multe incercari). -->
+      <div class="auth__demo">
+        <form class="auth__demo-cap" method="post" action="admin_login.php">
+          <span class="auth__demo-titlu">Cont de test</span>
+          <input type="hidden" name="login" value="<?= h(DEMO_USER) ?>">
+          <input type="hidden" name="parola" value="<?= h(DEMO_PAROLA) ?>">
+          <button class="btn btn--mic auth__demo-btn" type="submit" <?= $blocatSecunde > 0 ? 'disabled' : '' ?>>
+            (click aici)
+          </button>
+        </form>
+
+        <dl class="auth__demo-lista">
+          <dt>User</dt>
+          <dd><?= h(DEMO_USER) ?></dd>
+          <dt>Parola</dt>
+          <dd><?= h(DEMO_PAROLA) ?></dd>
+        </dl>
+      </div>
 
       <?php if ($flash): ?>
         <div class="alert alert--<?= h($flash['state']) ?>"><?= h($flash['message']) ?></div>
@@ -138,11 +180,12 @@ $faraConturi = $utilizatori->numarConturi() === 0;
         </div>
       </form>
 
-      <p class="auth__nota">
-        Parola e criptata in baza de date (bcrypt) - nu poate fi citita de nimeni,
-        nici din phpMyAdmin.
-      </p>
+        <p class="auth__nota">
+          Parola e criptata in baza de date (bcrypt) - nu poate fi citita de nimeni,
+          nici din phpMyAdmin.
+        </p>
 
+      </div>
     </div>
   </section>
 

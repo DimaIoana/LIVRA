@@ -141,8 +141,10 @@ $config = [
         'profit' => [
             'param' => 'profit',
             'buttonLabel' => function ($row) use ($repo, $optimizare) {
+                // O comanda anulata care n-a expediat nimic isi pastreaza butonul,
+                // ca sa poata fi redeschisa: anularea e o decizie, nu o fundatura.
                 if (!$repo->esteDeschisa($row)) {
-                    return '';
+                    return $repo->poateFiRedeschisa($row) ? 'Redeschide' : '';
                 }
 
                 return $repo->situatieFinanciara($row, $optimizare)['profit'] < 0
@@ -150,6 +152,10 @@ $config = [
                     : 'Profitabil';
             },
             'buttonClass' => function ($row) use ($repo, $optimizare) {
+                if (!$repo->esteDeschisa($row)) {
+                    return 'btn--ghost';
+                }
+
                 return $repo->situatieFinanciara($row, $optimizare)['profit'] < 0
                     ? 'btn--danger-solid'
                     : 'btn--ghost';
@@ -166,6 +172,7 @@ $config = [
             },
             'footer' => function ($row, $inapoi) use ($repo) {
                 $deschisa = $repo->esteDeschisa($row);
+                $redeschidere = $repo->poateFiRedeschisa($row);
 
                 require __DIR__ . '/_decizie_butoane.php';
             },
@@ -179,14 +186,33 @@ $config = [
                 return ['message' => 'Comanda nu mai e deschisa, decizia nu se mai poate lua.', 'state' => 'fail'];
             }
 
-            return ['message' => 'Comanda a trecut pe "In procesare". Cifrele au fost inregistrate.', 'state' => 'ok'];
+            return [
+                'message' => 'Comanda #' . (int) $row['ComandaID'] . ' a fost acceptata: a trecut pe '
+                    . '"In procesare" si cifrele au fost inregistrate. O poti expedia din Expedieri.',
+                'state' => 'ok',
+            ];
         },
         'anuleaza' => function ($row) use ($repo) {
             if (!$repo->anuleaza($row)) {
                 return ['message' => 'Comanda nu mai e deschisa, decizia nu se mai poate lua.', 'state' => 'fail'];
             }
 
-            return ['message' => 'Comanda a fost anulata. Nu s-a inregistrat nicio cifra financiara.', 'state' => 'ok'];
+            return [
+                'message' => 'Comanda #' . (int) $row['ComandaID'] . ' a fost anulata. Nu s-a inregistrat '
+                    . 'nicio cifra financiara. Daca a fost din greseala, o poti redeschide cu butonul "Redeschide".',
+                'state' => 'ok',
+            ];
+        },
+        'redeschide' => function ($row) use ($repo) {
+            if (!$repo->redeschide($row)) {
+                return ['message' => 'Comanda nu poate fi redeschisa: are deja linii expediate.', 'state' => 'fail'];
+            }
+
+            return [
+                'message' => 'Comanda #' . (int) $row['ComandaID'] . ' a revenit pe "Noua". '
+                    . 'Poti decide din nou: Trimite sau Anuleaza.',
+                'state' => 'ok',
+            ];
         },
     ],
 

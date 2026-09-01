@@ -1,34 +1,65 @@
 <?php
 
+/**
+ * Control de stocks: cate un rand pe produs si luna - cate bucati avem, cand si
+ * in ce depozit.
+ *
+ * Produsul in sine (nume, categorie, pret de vanzare, poza) nu se editeaza aici,
+ * ci in Catalog de produse (catalog_produse.php). Aici se alege produsul din
+ * catalog si se completeaza doar cifrele lunii. Coloanele Produs / Categorie /
+ * Pret unitar / Poza vin din catalog, ca sa se vada despre ce e vorba.
+ */
+
 // Back office: doar pentru utilizatorii autentificati (vezi _auth.php).
 require __DIR__ . '/_auth.php';
 cere_admin();
 
 require_once __DIR__ . '/../database/db_connection.php';
 require __DIR__ . '/../backend/InventoryRepository.php';
+require __DIR__ . '/../backend/ProdusRepository.php';
 
 $repo = new InventoryRepository($pdo);
+$catalog = new ProdusRepository($pdo);
 
 // Depozitele (locatiile) produselor. Codul se salveaza in coloana `depozit`.
 $depozite = [1 => 'Arad', 2 => 'Braila', 3 => 'Pitesti'];
 
 $config = [
     'active' => 'produse',
-    'title' => 'Produse (stoc lunar)',
+    'title' => 'Control de stocks',
     'entityLabel' => 'inregistrarea',
     'addLabel' => 'Inregistrare noua',
     'searchPlaceholder' => 'Cauta dupa cod, nume sau categorie...',
     'pk' => 'InventoryID',
     'defaultSort' => ['column' => 'Date', 'dir' => 'desc'],
     'deleteBlockedMessage' => null,
-    'options' => [],
+    'options' => [
+        // Produsele din catalog, pentru dropdown-ul de mai jos. Prima optiune e
+        // goala, ca sa nu se aleaga din greseala primul produs din lista.
+        'produse' => array_merge(
+            [['id' => '', 'text' => '— alege produs —']],
+            $catalog->optiuni()
+        ),
+    ],
 
     'rowLabel' => function ($row) {
         return $row['Product_Name'] . ' (' . $row['Date'] . ')';
     },
 
+    // Legatura cu Catalogul de produse: de pe o luna de stoc se sare la produsul
+    // ca produs (un rand, pretul de acum), asa cum il vede clientul in magazin.
+    'rowLinks' => [
+        [
+            'label' => 'In catalog',
+            'href' => function ($row) {
+                return 'catalog_produse.php?search=' . urlencode($row['Product_ID']);
+            },
+        ],
+    ],
+
     'columns' => [
         ['key' => 'InventoryID', 'label' => 'ID', 'type' => 'id'],
+        // Poza, numele, categoria si pretul vin din catalog (JOIN pe Product_ID).
         ['key' => 'poze', 'label' => 'Poza', 'type' => 'image', 'urlPrefix' => '../../poze/'],
         ['key' => 'Product_ID', 'label' => 'Cod'],
         ['key' => 'Product_Name', 'label' => 'Produs'],
@@ -60,28 +91,22 @@ $config = [
     'fields' => [
         [
             'name' => 'Product_ID',
-            'label' => 'Cod produs',
-            'type' => 'text',
-            'maxlength' => 10,
-            // Vine precompletat cu urmatorul cod liber, calculat la deschiderea
-            // formularului. Nu e obligatoriu: lasat gol, se genereaza tot asa.
-            'default' => function () use ($repo) {
-                return $repo->codNou();
-            },
-            'hint' => 'Generat automat, incremental. Lasa-l asa pentru un produs nou; '
-                . 'pune codul unui produs existent doar daca adaugi o luna noua la el.',
+            'label' => 'Produs (din catalog)',
+            'type' => 'select',
+            'optionsFrom' => 'produse',
+            'hint' => 'Produsul trebuie sa existe in Catalog de produse. Daca nu-l gasesti '
+                . 'in lista, adauga-l intai acolo.',
         ],
-        ['name' => 'Product_Name', 'label' => 'Nume produs', 'type' => 'text', 'maxlength' => 100, 'required' => true],
+        ['name' => 'Stock_Level', 'label' => 'Stoc', 'type' => 'text', 'required' => true],
+        ['name' => 'Reorder_Point', 'label' => 'Prag de recomanda', 'type' => 'text', 'required' => true],
+        ['name' => 'Monthly_Sales', 'label' => 'Vanzari lunare', 'type' => 'text', 'required' => true],
         [
-            'name' => 'poze',
-            'label' => 'Poza produs',
-            'type' => 'image',
-            'uploadDir' => __DIR__ . '/../../poze',
-            'urlPrefix' => '../../poze/',
-            'accept' => 'image/*',
-            'hint' => 'JPG, PNG, GIF sau WEBP, max 2 MB. La editare, lasa gol ca sa pastrezi poza actuala.',
+            'name' => 'Cost_Unitar',
+            'label' => 'Cost unitar (lei)',
+            'type' => 'text',
+            'hint' => 'Cat costa produsul pe firma (achizitie) in luna asta, la depozitul asta. Optional. '
+                . 'Pretul de vanzare se pune in catalog.',
         ],
-        ['name' => 'Category', 'label' => 'Categorie', 'type' => 'text', 'maxlength' => 50, 'required' => true],
         [
             'name' => 'depozit',
             'label' => 'Depozit',
@@ -93,22 +118,6 @@ $config = [
                 }, array_keys($depozite), array_values($depozite))
             ),
             'hint' => 'Unde se afla fizic produsul: Arad, Braila sau Pitesti.',
-        ],
-        ['name' => 'Stock_Level', 'label' => 'Stoc', 'type' => 'text', 'required' => true],
-        ['name' => 'Reorder_Point', 'label' => 'Prag de recomanda', 'type' => 'text', 'required' => true],
-        ['name' => 'Monthly_Sales', 'label' => 'Vanzari lunare', 'type' => 'text', 'required' => true],
-        [
-            'name' => 'Unit_Cost',
-            'label' => 'Pret unitar (lei)',
-            'type' => 'text',
-            'required' => true,
-            'hint' => 'Pretul de vanzare, cel afisat clientului in magazin.',
-        ],
-        [
-            'name' => 'Cost_Unitar',
-            'label' => 'Cost unitar (lei)',
-            'type' => 'text',
-            'hint' => 'Cat costa produsul pe firma (achizitie). Optional.',
         ],
         [
             'name' => 'Date',

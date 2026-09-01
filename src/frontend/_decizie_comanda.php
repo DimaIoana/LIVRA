@@ -25,7 +25,11 @@ $pierdere = $f['profit'] < 0;
 </p>
 
 <p class="alg__verdict">
-  <?php if (!$deschisa): ?>
+  <?php if ($repoComenzi->poateFiRedeschisa($comanda)): ?>
+    <span class="tag tag--fail">Anulata</span>
+    Comanda a fost anulata si n-a expediat nimic, deci nu s-a pierdut nimic:
+    <strong>Redeschide</strong> o pune la loc pe "Noua" si poti decide din nou.
+  <?php elseif (!$deschisa): ?>
     <span class="tag">Decisa</span>
     Comanda nu mai e deschisa: are statusul <strong><?= h($comanda['Status']) ?></strong><?php
       ?><?= (int) $comanda['NrExpediate'] > 0 ? ' si ' . (int) $comanda['NrExpediate'] . ' linii deja expediate' : '' ?>.
@@ -35,6 +39,7 @@ $pierdere = $f['profit'] < 0;
     <strong><?= h(fmt_money($f['incasare'])) ?></strong> si cheltui
     <strong><?= h(fmt_money($f['cost'])) ?></strong>, deci pierzi
     <strong class="alg__minute--rau"><?= h(fmt_money(-$f['profit'])) ?></strong>.
+    Estimarea e doar o informatie: <strong>Trimite</strong> accepta comanda oricum, daca asa decizi.
   <?php else: ?>
     <span class="tag tag--ok">Profitabil</span>
     Daca pleaca acum, comanda aduce

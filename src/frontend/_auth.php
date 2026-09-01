@@ -32,13 +32,43 @@ define('ADMIN_INACTIVITATE_MAX', 2 * 60 * 60);
 // declaratie ar opri pagina cu "Cannot redeclare h()".
 
 /**
- * Calea web catre radacina proiectului (ex: /CLAUDE/PRIMUL), dedusa din pozitia
- * fisierului fata de document root. Asa functioneaza redirectul spre login
- * la fel din `index.php` (radacina) si din `src/frontend/*.php`.
+ * Calea web catre radacina aplicatiei (local `/CLAUDE/PRIMUL`, pe server `/app`).
+ * De ea atarna redirectul spre login, ca sa functioneze la fel din `index.php`
+ * (radacina) si din `src/frontend/*.php`.
+ *
+ * Se deduce din adresa ceruta de browser, nu din pozitia fisierului pe disc.
+ * Pe gazduire cele doua nu coincid: aplicatia sta in `webpersonal/app/`, dar
+ * radacina domeniului e rescrisa intern catre `webpersonal/`, deci browserul
+ * cere aceleasi fisiere de la `/app`. Daca am calcula base-ul de pe disc, primul
+ * redirect ar muta utilizatorul de la `/app/...` la `/webpersonal/app/...`.
+ *
+ * Metoda: stim ce cale are scriptul curent fata de radacina aplicatiei (de ex.
+ * `src/frontend/comenzi.php`); o taiem din coada adresei cerute si ce ramane in
+ * fata e base-ul.
  */
 function admin_base_url()
 {
     $root = str_replace('\\', '/', (string) realpath(__DIR__ . '/../..'));
+    $script = str_replace('\\', '/', (string) realpath((string) ($_SERVER['SCRIPT_FILENAME'] ?? '')));
+    $cerut = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+
+    if ($root !== '' && $cerut !== '' && strpos($script, $root . '/') === 0) {
+        // Calea scriptului fata de radacina aplicatiei: 'index.php',
+        // 'src/frontend/comenzi.php' ...
+        $relativ = '/' . substr($script, strlen($root) + 1);
+
+        if (substr($cerut, -strlen($relativ)) === $relativ) {
+            return substr($cerut, 0, strlen($cerut) - strlen($relativ));
+        }
+
+        // Cerere de folder ("/app/"), unde numele fisierului nu apare in adresa
+        // pentru ca il completeaza serverul din DirectoryIndex.
+        if (substr($cerut, -1) === '/' && strpos(ltrim($relativ, '/'), '/') === false) {
+            return rtrim($cerut, '/');
+        }
+    }
+
+    // Rezerva: pozitia pe disc fata de document root (CLI, configurari exotice).
     $docroot = str_replace('\\', '/', (string) realpath($_SERVER['DOCUMENT_ROOT'] ?? ''));
 
     if ($docroot !== '' && strpos($root, $docroot) === 0) {

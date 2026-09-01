@@ -382,8 +382,9 @@ class AnalizaRuteService
 
         $produs = null;
         if ($productId !== false && $productId !== null) {
+            // Numele produsului sta in catalog, nu pe randul de stoc.
             $stmt = $this->pdo->prepare(
-                'SELECT Product_ID, Product_Name FROM inventory WHERE Product_ID = :p LIMIT 1'
+                'SELECT Product_ID, Product_Name FROM produse WHERE Product_ID = :p LIMIT 1'
             );
             $stmt->execute(['p' => $productId]);
             $produs = $stmt->fetch();
